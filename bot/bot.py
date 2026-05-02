@@ -31,11 +31,19 @@ class Bot(Client):
         )
 
     async def start(self):
-        b_users, b_chats = await db.get_banned()
-        temp.BANNED_USERS = b_users
-        temp.BANNED_CHATS = b_chats
+        try:
+            b_users, b_chats = await db.get_banned()
+            temp.BANNED_USERS = b_users
+            temp.BANNED_CHATS = b_chats
+        except Exception as e:
+            logging.warning(f"MongoDB not reachable, running with in-memory DB: {e}")
+            temp.BANNED_USERS = []
+            temp.BANNED_CHATS = []
         await super().start()
-        await Media.ensure_indexes()
+        try:
+            await Media.ensure_indexes()
+        except Exception as e:
+            logging.warning(f"MongoDB index creation skipped: {e}")
         me = await self.get_me()
         temp.ME = me.id
         temp.U_NAME = me.username
