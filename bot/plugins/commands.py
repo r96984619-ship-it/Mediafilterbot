@@ -25,7 +25,7 @@ BATCH_FILES = {}
 async def start(client, message):
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         buttons = [
-            [InlineKeyboardButton('🤖 Updates', url='https://t.me/TeamEvamaria')],
+            [InlineKeyboardButton('🤖 Updates', url='https://t.me/backupchannek')],
             [InlineKeyboardButton('ℹ️ Help', url=f"https://t.me/{temp.U_NAME}?start=help")],
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
@@ -60,7 +60,7 @@ async def start(client, message):
             [InlineKeyboardButton('➕ Add Me To Your Groups ➕', url=f'http://t.me/{temp.U_NAME}?startgroup=true')],
             [
                 InlineKeyboardButton('🔍 Search', switch_inline_query_current_chat=''),
-                InlineKeyboardButton('🤖 Updates', url='https://t.me/TeamEvamaria')
+                InlineKeyboardButton('🤖 Updates', url='https://t.me/backupchannek')
             ],
             [
                 InlineKeyboardButton('ℹ️ Help', callback_data='help'),
@@ -103,7 +103,7 @@ async def start(client, message):
             [InlineKeyboardButton('➕ Add Me To Your Groups ➕', url=f'http://t.me/{temp.U_NAME}?startgroup=true')],
             [
                 InlineKeyboardButton('🔍 Search', switch_inline_query_current_chat=''),
-                InlineKeyboardButton('🤖 Updates', url='https://t.me/TeamEvamaria')
+                InlineKeyboardButton('🤖 Updates', url='https://t.me/backupchannek')
             ],
             [
                 InlineKeyboardButton('ℹ️ Help', callback_data='help'),
