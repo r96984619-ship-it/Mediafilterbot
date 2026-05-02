@@ -17,7 +17,7 @@ if USE_MONGO:
         from motor.motor_asyncio import AsyncIOMotorClient
         from marshmallow.exceptions import ValidationError
 
-        client = AsyncIOMotorClient(DATABASE_URI)
+        client = AsyncIOMotorClient(DATABASE_URI, tlsAllowInvalidCertificates=True)
         db = client[DATABASE_NAME]
         instance = Instance.from_db(db)
 
