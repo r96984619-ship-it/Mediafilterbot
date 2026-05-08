@@ -15,7 +15,7 @@ from info import (CHANNELS, ADMINS, AUTH_CHANNEL, LOG_CHANNEL, PICS,
 from utils import (get_settings, get_size, is_subscribed, save_group_settings, temp,
                    clean_caption, get_shortlink, make_verify_token,
                    get_time_greeting, get_daily_verify_info, mark_verified,
-                   is_premium, track_search, get_most_searched)
+                   is_premium, track_search, get_most_searched, check_fsub)
 from database.connections_mdb import active_connection
 import re
 import json
@@ -25,6 +25,24 @@ import time
 logger = logging.getLogger(__name__)
 
 BATCH_FILES = {}
+
+
+async def _send_fsub_message(bot, user_id: int, unjoined: list, deep_link: str = ""):
+    """Send a beautiful force-subscribe message listing all unjoined channels."""
+    ch_list = "\n".join(
+        f"{i}. 📢 <b>{ch['title']}</b>" for i, ch in enumerate(unjoined, 1)
+    )
+    text = script.FSUB_TXT.format(count=len(unjoined), channel_list=ch_list)
+    btn = [[InlineKeyboardButton(f"📢 Join {ch['title']}", url=ch['invite_link'])]
+           for ch in unjoined]
+    retry_data = f"fsub_retry#{deep_link}" if deep_link else "fsub_retry#"
+    btn.append([InlineKeyboardButton("✅ I've Joined — Try Again", callback_data=retry_data)])
+    await bot.send_message(
+        chat_id=user_id,
+        text=text,
+        reply_markup=InlineKeyboardMarkup(btn),
+        parse_mode=enums.ParseMode.HTML
+    )
 
 
 def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
@@ -150,26 +168,10 @@ async def start(client, message):
         return
 
     # ── Force-subscribe check ─────────────────────────────────────────────────
-    if AUTH_CHANNEL and not await is_subscribed(client, message):
-        try:
-            invite_link = await client.create_chat_invite_link(int(AUTH_CHANNEL))
-        except ChatAdminRequired:
-            logger.error("Make sure Bot is admin in Forcesub channel")
-            return
-        btn = [[InlineKeyboardButton("📢 Join Updates Channel", url=invite_link.invite_link)]]
-        if message.command[1] != "subscribe":
-            try:
-                kk, file_id = message.command[1].split("_", 1)
-                pre = 'checksubp' if kk == 'filep' else 'checksub'
-                btn.append([InlineKeyboardButton("🔄 Try Again", callback_data=f"{pre}#{file_id}")])
-            except (IndexError, ValueError):
-                btn.append([InlineKeyboardButton("🔄 Try Again", url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}")])
-        await client.send_message(
-            chat_id=message.from_user.id,
-            text="**Please Join My Updates Channel to use this Bot!**",
-            reply_markup=InlineKeyboardMarkup(btn),
-            parse_mode=enums.ParseMode.MARKDOWN
-        )
+    unjoined = await check_fsub(client, message.from_user.id)
+    if unjoined:
+        deep = message.command[1] if len(message.command) == 2 else ""
+        await _send_fsub_message(client, message.from_user.id, unjoined, deep)
         return
 
     if len(message.command) == 2 and message.command[1] in ["subscribe", "error", "okay", "help"]:

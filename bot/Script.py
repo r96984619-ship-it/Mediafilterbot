@@ -33,6 +33,15 @@ I am <a href="https://t.me/{uname}">{bname}</a> — a powerful movie search bot.
 
 Add me to your group and enjoy! 🎬"""
 
+    # ── Force Subscribe ───────────────────────────────────────────────────────
+
+    FSUB_TXT = """🔒 <b>Access Restricted!</b>
+
+You must join {count} channel(s) to use this bot.
+Please join all channels below and then tap <b>✅ I've Joined</b>.
+
+{channel_list}"""
+
     # ── PM redirect ───────────────────────────────────────────────────────────
 
     PM_REDIRECT = """<b>HEY {name},</b>

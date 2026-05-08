@@ -41,6 +41,12 @@ auth_grp = environ.get('AUTH_GROUP')
 AUTH_CHANNEL = int(auth_channel) if auth_channel and id_pattern.search(auth_channel) else None
 AUTH_GROUPS = [int(ch) for ch in auth_grp.split()] if auth_grp else None
 
+# Force-subscribe channels (up to 3)
+_fsub2 = environ.get('FSUB_2', '')
+_fsub3 = environ.get('FSUB_3', '')
+FSUB_2 = int(_fsub2) if _fsub2 and id_pattern.search(_fsub2) else None
+FSUB_3 = int(_fsub3) if _fsub3 and id_pattern.search(_fsub3) else None
+
 # MongoDB information
 DATABASE_URI = environ.get('DATABASE_URI', "")
 DATABASE_NAME = environ.get('DATABASE_NAME', "Rajappan")

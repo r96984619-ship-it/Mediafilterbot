@@ -183,16 +183,48 @@ def _mock_poster(query):
 
 
 async def is_subscribed(bot, query):
+    """Legacy single-channel check (kept for backward compat)."""
     try:
         user = await bot.get_chat_member(AUTH_CHANNEL, query.from_user.id)
     except UserNotParticipant:
-        pass
+        return False
     except Exception as e:
         logger.exception(e)
-    else:
-        if user.status != 'kicked':
-            return True
-    return False
+        return False
+    return user.status not in ['kicked', 'left']
+
+
+async def check_fsub(bot, user_id: int) -> list:
+    """
+    Check all configured force-subscribe channels.
+    Returns a list of dicts for every channel the user has NOT joined:
+        [{'id': -100xxx, 'title': 'Channel Name', 'invite_link': 'https://...'}]
+    Empty list means the user has joined all channels (access granted).
+    """
+    import info as _info
+    channels = [c for c in [_info.AUTH_CHANNEL, _info.FSUB_2, _info.FSUB_3] if c]
+    unjoined = []
+    for ch_id in channels:
+        try:
+            member = await bot.get_chat_member(ch_id, user_id)
+            if member.status in ['kicked', 'left']:
+                raise UserNotParticipant
+        except UserNotParticipant:
+            try:
+                chat = await bot.get_chat(ch_id)
+                title = chat.title or str(ch_id)
+                try:
+                    inv = await bot.create_chat_invite_link(ch_id)
+                    link = inv.invite_link
+                except Exception:
+                    link = chat.invite_link or f"https://t.me/c/{str(ch_id).replace('-100', '')}"
+            except Exception:
+                title = str(ch_id)
+                link = f"https://t.me/c/{str(ch_id).replace('-100', '')}"
+            unjoined.append({'id': ch_id, 'title': title, 'invite_link': link})
+        except Exception as e:
+            logger.warning(f"FSub check error for {ch_id}: {e}")
+    return unjoined
 
 
 async def get_poster(query, bulk=False, id=False, file=None):

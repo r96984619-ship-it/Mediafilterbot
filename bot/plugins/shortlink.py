@@ -157,50 +157,102 @@ async def set_imdb_template(bot, message):
     await message.reply(f"✅ **IMDB template updated!**", parse_mode="markdown")
 
 
+async def _parse_channel(ch_str: str):
+    """Parse a channel string into int ID or @username."""
+    ch = ch_str.strip()
+    if ch.lstrip('-').isdigit():
+        return int(ch)
+    return ch.lstrip('@')
+
+
 @Client.on_message(filters.command('fsu') & filters.user(ADMINS))
 async def set_force_sub(bot, message):
+    """Set FSub channel 1 (/fsu), 2 (/fsu2), 3 (/fsu3)."""
+    cmd = message.command[0]          # fsu / fsu2 / fsu3
+    slot = cmd.replace('fsu', '') or '1'   # '1', '2', or '3'
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply(
-            "**Usage:** `/fsu <channel_id or @username>`\n\n"
-            "Users must join this channel before getting files.\n"
-            "Make sure bot is admin in the channel!",
+            f"**Usage:** `/{cmd} <channel_id or @username>`\n\n"
+            "Make sure the bot is an admin in the channel!",
             parse_mode="markdown"
         )
-    ch = parts[1].strip()
     try:
-        if ch.lstrip('-').isdigit():
-            ch_val = int(ch)
-        else:
-            ch_val = ch.lstrip('@')
+        ch_val = await _parse_channel(parts[1])
         import os, info as _info
-        os.environ['AUTH_CHANNEL'] = str(ch_val)
-        _info.AUTH_CHANNEL = ch_val
-        await message.reply(f"✅ **Force subscribe enabled!**\nChannel: `{ch_val}`\n\nUsers must join before getting files.", parse_mode="markdown")
+        if slot == '1':
+            os.environ['AUTH_CHANNEL'] = str(ch_val)
+            _info.AUTH_CHANNEL = int(ch_val) if str(ch_val).lstrip('-').isdigit() else None
+        elif slot == '2':
+            os.environ['FSUB_2'] = str(ch_val)
+            _info.FSUB_2 = int(ch_val) if str(ch_val).lstrip('-').isdigit() else None
+        elif slot == '3':
+            os.environ['FSUB_3'] = str(ch_val)
+            _info.FSUB_3 = int(ch_val) if str(ch_val).lstrip('-').isdigit() else None
+        try:
+            chat = await bot.get_chat(ch_val)
+            ch_name = chat.title
+        except Exception:
+            ch_name = str(ch_val)
+        await message.reply(
+            f"✅ **Force Sub #{slot} enabled!**\n"
+            f"Channel: **{ch_name}**\n"
+            f"ID: `{ch_val}`\n\n"
+            f"Users must join this channel before getting files.",
+            parse_mode="markdown"
+        )
     except Exception as e:
-        await message.reply(f"❌ Error: {e}")
+        await message.reply(f"❌ Error: `{e}`", parse_mode="markdown")
+
+
+@Client.on_message(filters.command(['fsu2', 'fsu3']) & filters.user(ADMINS))
+async def set_force_sub_extra(bot, message):
+    await set_force_sub(bot, message)
 
 
 @Client.on_message(filters.command('del_fsub') & filters.user(ADMINS))
 async def remove_force_sub(bot, message):
+    """Remove FSub channel 1 (/del_fsub), 2 (/del_fsub2), 3 (/del_fsub3)."""
+    cmd = message.command[0]
+    slot = cmd.replace('del_fsub', '') or '1'
     import os, info as _info
-    os.environ['AUTH_CHANNEL'] = ''
-    _info.AUTH_CHANNEL = None
-    await message.reply("✅ **Force subscribe removed!** Users can now get files without joining.", parse_mode="markdown")
+    if slot == '1':
+        os.environ['AUTH_CHANNEL'] = ''
+        _info.AUTH_CHANNEL = None
+    elif slot == '2':
+        os.environ['FSUB_2'] = ''
+        _info.FSUB_2 = None
+    elif slot == '3':
+        os.environ['FSUB_3'] = ''
+        _info.FSUB_3 = None
+    await message.reply(f"✅ **Force Sub #{slot} removed!**", parse_mode="markdown")
+
+
+@Client.on_message(filters.command(['del_fsub2', 'del_fsub3']) & filters.user(ADMINS))
+async def remove_force_sub_extra(bot, message):
+    await remove_force_sub(bot, message)
 
 
 @Client.on_message(filters.command('show_fsub') & filters.user(ADMINS))
 async def show_force_sub(bot, message):
     import info as _info
-    ch = _info.AUTH_CHANNEL
-    if ch:
+    channels = [
+        ('1', _info.AUTH_CHANNEL),
+        ('2', _info.FSUB_2),
+        ('3', _info.FSUB_3),
+    ]
+    active = [(slot, ch) for slot, ch in channels if ch]
+    if not active:
+        return await message.reply("❌ **Force Sub is OFF** — no channels set.\n\nUse `/fsu`, `/fsu2`, `/fsu3` to add channels.", parse_mode="markdown")
+    lines = ["✅ **Force Sub Channels:**\n"]
+    for slot, ch_id in active:
         try:
-            chat = await bot.get_chat(ch)
-            await message.reply(f"✅ **Force Sub is ON**\nChannel: **{chat.title}**\nID: `{ch}`", parse_mode="markdown")
+            chat = await bot.get_chat(ch_id)
+            lines.append(f"**Slot {slot}:** [{chat.title}](https://t.me/{chat.username or 'c/' + str(ch_id).replace('-100','')}) — ID: `{ch_id}`")
         except Exception:
-            await message.reply(f"✅ **Force Sub is ON**\nChannel ID: `{ch}`", parse_mode="markdown")
-    else:
-        await message.reply("❌ **Force Sub is OFF** — no channel set.")
+            lines.append(f"**Slot {slot}:** ID `{ch_id}` (can't fetch name)")
+    lines.append(f"\n**Commands:**\n`/del_fsub` · `/del_fsub2` · `/del_fsub3` to remove\n`/fsu` · `/fsu2` · `/fsu3` to change")
+    await message.reply("\n".join(lines), parse_mode="markdown", disable_web_page_preview=True)
 
 
 @Client.on_message(filters.command('ginfo') & filters.user(ADMINS))

@@ -21,7 +21,8 @@ from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerId
 from utils import (get_size, is_subscribed, get_poster, search_gagala, temp,
                    get_settings, save_group_settings, clean_caption,
                    get_shortlink, make_verify_token, get_daily_verify_info,
-                   is_premium, track_search, get_most_searched, get_time_greeting)
+                   is_premium, track_search, get_most_searched, get_time_greeting,
+                   check_fsub)
 import time
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results
@@ -388,8 +389,27 @@ async def cb_handler(client: Client, query: CallbackQuery):
         if f_caption is None:
             f_caption = clean_caption(files.file_name)
         try:
-            if AUTH_CHANNEL and not await is_subscribed(client, query):
-                await query.answer(url=f"https://t.me/{temp.U_NAME}?start={ident}_{file_id}")
+            # ── Force-subscribe gate ──────────────────────────────────────
+            unjoined = await check_fsub(client, query.from_user.id)
+            if unjoined:
+                await query.answer("⚠️ Please join our channels first!", show_alert=True)
+                ch_list = "\n".join(
+                    f"{i}. 📢 <b>{ch['title']}</b>" for i, ch in enumerate(unjoined, 1)
+                )
+                from Script import script as _script
+                text = _script.FSUB_TXT.format(count=len(unjoined), channel_list=ch_list)
+                btn = [[InlineKeyboardButton(f"📢 Join {ch['title']}", url=ch['invite_link'])]
+                       for ch in unjoined]
+                btn.append([InlineKeyboardButton(
+                    "✅ I've Joined — Try Again",
+                    callback_data=f"fsub_retry#{ident}_{file_id}"
+                )])
+                await client.send_message(
+                    chat_id=query.from_user.id,
+                    text=text,
+                    reply_markup=InlineKeyboardMarkup(btn),
+                    parse_mode=enums.ParseMode.HTML
+                )
                 return
             elif settings['botpm']:
                 await query.answer(url=f"https://t.me/{temp.U_NAME}?start={ident}_{file_id}")
@@ -453,9 +473,62 @@ async def cb_handler(client: Client, query: CallbackQuery):
         except Exception:
             await query.answer(url=f"https://t.me/{temp.U_NAME}?start={ident}_{file_id}")
 
+    elif query.data.startswith("fsub_retry"):
+        # User tapped "I've Joined — Try Again"
+        unjoined = await check_fsub(client, query.from_user.id)
+        if unjoined:
+            ch_names = ", ".join(ch['title'] for ch in unjoined)
+            await query.answer(
+                f"❌ You still haven't joined: {ch_names}\nPlease join and try again!",
+                show_alert=True
+            )
+            return
+        # All joined — figure out what they were trying to get
+        deep = query.data.split("#", 1)[1].strip()
+        if not deep:
+            # No pending file — just show start screen
+            await query.answer("✅ Verified! You can now use the bot.", show_alert=True)
+            await query.message.delete()
+            return
+        # deep is e.g. "file_XXXX" or "filep_XXXX"
+        try:
+            ident, file_id = deep.split("_", 1)
+        except ValueError:
+            await query.answer("✅ Verified! Search for your movie again.", show_alert=True)
+            await query.message.delete()
+            return
+        files_ = await get_file_details(file_id)
+        if not files_:
+            return await query.answer('File not found.', show_alert=True)
+        files = files_[0]
+        title = clean_caption(files.file_name)
+        size = get_size(files.file_size)
+        f_caption = clean_caption(files.caption)
+        if CUSTOM_FILE_CAPTION:
+            try:
+                f_caption = CUSTOM_FILE_CAPTION.format(
+                    file_name='' if title is None else title,
+                    file_size='' if size is None else size,
+                    file_caption='' if f_caption is None else f_caption
+                )
+            except Exception:
+                pass
+        if f_caption is None:
+            f_caption = clean_caption(title)
+        await query.answer("✅ Access granted!", show_alert=True)
+        await query.message.delete()
+        await client.send_cached_media(
+            chat_id=query.from_user.id,
+            file_id=file_id,
+            caption=f_caption,
+            protect_content=True if ident == 'filep' else False
+        )
+
     elif query.data.startswith("checksub"):
-        if AUTH_CHANNEL and not await is_subscribed(client, query):
-            await query.answer("I Like Your Smartness, But Don't Be Oversmart 😒", show_alert=True)
+        # Legacy handler kept for old inline buttons still in circulation
+        unjoined = await check_fsub(client, query.from_user.id)
+        if unjoined:
+            await query.answer("Please join all required channels first! 😒", show_alert=True)
             return
         ident, file_id = query.data.split("#")
         files_ = await get_file_details(file_id)
