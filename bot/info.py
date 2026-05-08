@@ -64,6 +64,18 @@ MELCOW_NEW_USERS = is_enabled((environ.get('MELCOW_NEW_USERS', "True")), True)
 PROTECT_CONTENT = is_enabled((environ.get('PROTECT_CONTENT', "False")), False)
 PUBLIC_FILE_STORE = is_enabled((environ.get('PUBLIC_FILE_STORE', "True")), True)
 
+# Shortlink / Monetization
+SHORTLINK_URL = environ.get('SHORTLINK_URL', '')
+SHORTLINK_API = environ.get('SHORTLINK_API', '')
+SHORTLINK_URL2 = environ.get('SHORTLINK_URL2', '')
+SHORTLINK_API2 = environ.get('SHORTLINK_API2', '')
+SHORTLINK_URL3 = environ.get('SHORTLINK_URL3', '')
+SHORTLINK_API3 = environ.get('SHORTLINK_API3', '')
+VERIFY_EXPIRE = int(environ.get('VERIFY_EXPIRE', 86400))   # seconds — default 24 h
+VERIFY_TUTORIAL = environ.get('VERIFY_TUTORIAL', '')
+VERIFY_TUTORIAL2 = environ.get('VERIFY_TUTORIAL2', '')
+VERIFY_TUTORIAL3 = environ.get('VERIFY_TUTORIAL3', '')
+
 LOG_STR = "Current Customized Configurations are:-\n"
 LOG_STR += ("IMDB Results are enabled, Bot will be showing imdb details for your queries.\n" if IMDB else "IMDB Results are disabled.\n")
 LOG_STR += ("P_TTI_SHOW_OFF found, Users will be redirected to send /start to Bot PM instead of sending file directly\n" if P_TTI_SHOW_OFF else "P_TTI_SHOW_OFF is disabled, files will be sent in PM instead of sending start.\n")

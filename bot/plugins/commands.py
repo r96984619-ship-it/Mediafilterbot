@@ -9,12 +9,14 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from database.ia_filterdb import Media, get_file_details, unpack_new_file_id
 from database.users_chats_db import db
 from info import (CHANNELS, ADMINS, AUTH_CHANNEL, LOG_CHANNEL, PICS,
-                  BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT)
-from utils import get_settings, get_size, is_subscribed, save_group_settings, temp, clean_caption
+                  BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT,
+                  SHORTLINK_URL, SHORTLINK_API, VERIFY_EXPIRE, VERIFY_TUTORIAL)
+from utils import get_settings, get_size, is_subscribed, save_group_settings, temp, clean_caption, get_shortlink, make_verify_token
 from database.connections_mdb import active_connection
 import re
 import json
 import base64
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +122,48 @@ async def start(client, message):
         return
 
     data = message.command[1]
+
+    # ── Verify token (shortlink bypass) ───────────────────────────────────────
+    if data.startswith("verify_"):
+        token = data[7:]
+        info = temp.VERIFY_TOKENS.get(token)
+        if not info:
+            return await message.reply("❌ This link has expired. Please search for the file again.")
+        if time.time() > info['expires_at']:
+            temp.VERIFY_TOKENS.pop(token, None)
+            return await message.reply("⏰ Link expired. Please search for the file again.")
+        if info['user_id'] != message.from_user.id:
+            return await message.reply("❌ This link is not for you.")
+        temp.VERIFY_TOKENS.pop(token, None)
+        file_id = info['file_id']
+        pre = info['pre']
+        files_ = await get_file_details(file_id)
+        if files_:
+            files = files_[0]
+            title = clean_caption(files.file_name)
+            size = get_size(files.file_size)
+            f_caption = clean_caption(files.caption)
+            if CUSTOM_FILE_CAPTION:
+                try:
+                    f_caption = CUSTOM_FILE_CAPTION.format(
+                        file_name='' if title is None else title,
+                        file_size='' if size is None else size,
+                        file_caption='' if f_caption is None else f_caption
+                    )
+                except Exception:
+                    pass
+            if f_caption is None:
+                f_caption = clean_caption(files.file_name)
+        else:
+            f_caption = ""
+        await client.send_cached_media(
+            chat_id=message.from_user.id,
+            file_id=file_id,
+            caption=f_caption,
+            protect_content=True if pre == 'filep' else False,
+        )
+        return
+
     try:
         pre, file_id = data.split('_', 1)
     except Exception:

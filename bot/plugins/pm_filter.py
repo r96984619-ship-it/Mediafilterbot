@@ -13,11 +13,13 @@ from database.connections_mdb import (
 )
 from info import (ADMINS, AUTH_CHANNEL, AUTH_USERS, CUSTOM_FILE_CAPTION,
                   AUTH_GROUPS, P_TTI_SHOW_OFF, IMDB, SINGLE_BUTTON,
-                  SPELL_CHECK_REPLY, IMDB_TEMPLATE)
+                  SPELL_CHECK_REPLY, IMDB_TEMPLATE, SHORTLINK_URL, SHORTLINK_API,
+                  VERIFY_EXPIRE, VERIFY_TUTORIAL)
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid
-from utils import get_size, is_subscribed, get_poster, search_gagala, temp, get_settings, save_group_settings, clean_caption
+from utils import get_size, is_subscribed, get_poster, search_gagala, temp, get_settings, save_group_settings, clean_caption, get_shortlink, make_verify_token
+import time
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results
 from database.filters_mdb import del_all, find_filter, get_filters
@@ -389,6 +391,39 @@ async def cb_handler(client: Client, query: CallbackQuery):
             elif settings['botpm']:
                 await query.answer(url=f"https://t.me/{temp.U_NAME}?start={ident}_{file_id}")
                 return
+
+            # ── Shortlink monetization ────────────────────────────────────
+            import info as _info
+            sl_url = _info.SHORTLINK_URL
+            sl_api = _info.SHORTLINK_API
+            if sl_url and sl_api:
+                token = make_verify_token(query.from_user.id, file_id)
+                temp.VERIFY_TOKENS[token] = {
+                    'file_id': file_id,
+                    'pre': ident,
+                    'user_id': query.from_user.id,
+                    'expires_at': time.time() + _info.VERIFY_EXPIRE,
+                }
+                bot_link = f"https://t.me/{temp.U_NAME}?start=verify_{token}"
+                short = await get_shortlink(bot_link, sl_url, sl_api)
+                btn = [[InlineKeyboardButton("🔗 Get File", url=short)]]
+                if _info.VERIFY_TUTORIAL:
+                    btn.append([InlineKeyboardButton("📖 How to bypass", url=_info.VERIFY_TUTORIAL)])
+                await query.answer()
+                await client.send_message(
+                    chat_id=query.from_user.id,
+                    text=(
+                        f"**🎬 Your file is ready!**\n\n"
+                        f"📄 `{title}`\n"
+                        f"📦 Size: **{size}**\n\n"
+                        f"👇 Click the button below to get your file.\n"
+                        f"_(This helps support the bot ❤️)_"
+                    ),
+                    reply_markup=InlineKeyboardMarkup(btn),
+                    parse_mode=enums.ParseMode.MARKDOWN
+                )
+                return
+            # ── No shortlink — send directly ─────────────────────────────
             else:
                 await client.send_cached_media(
                     chat_id=query.from_user.id,

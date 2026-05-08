@@ -24,6 +24,39 @@ SMART_CLOSE = '\u201d'
 START_CHAR = ('\'', '"', SMART_OPEN)
 
 
+import hashlib
+import time
+
+# ── Shortlink helpers ─────────────────────────────────────────────────────────
+
+async def get_shortlink(url: str, api_url: str, api_key: str) -> str:
+    """Shorten a URL using any mdisk-compatible shortener API."""
+    import aiohttp
+    try:
+        api_base = api_url.rstrip('/')
+        endpoint = f"{api_base}/api?api={api_key}&url={url}"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(endpoint, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                data = await resp.json()
+                short = (
+                    data.get('shortenedUrl')
+                    or data.get('short_url')
+                    or data.get('shortedUrl')
+                    or data.get('url')
+                )
+                if short:
+                    return short
+    except Exception:
+        pass
+    return url   # fallback: return original url if shortener fails
+
+
+def make_verify_token(user_id: int, file_id: str) -> str:
+    """Create a unique one-time token for file verification."""
+    raw = f"{user_id}-{file_id}-{time.time()}"
+    return hashlib.md5(raw.encode()).hexdigest()[:12]
+
+
 def clean_caption(text: str) -> str:
     """Replace any external @channel watermarks with @backupchannek."""
     if not text:
@@ -46,6 +79,7 @@ class temp(object):
     U_NAME = None
     B_NAME = None
     SETTINGS = {}
+    VERIFY_TOKENS = {}   # token -> {file_id, pre, expires_at, user_id}
 
 
 # ── IMDb helpers ──────────────────────────────────────────────────────────────
