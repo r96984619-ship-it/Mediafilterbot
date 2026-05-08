@@ -131,70 +131,91 @@ async def imdb_search(client, message):
 @Client.on_callback_query(filters.regex('^imdb'))
 async def imdb_callback(bot: Client, quer_y: CallbackQuery):
     i, movie = quer_y.data.split('#')
+    await quer_y.answer('Fetching IMDb data...', show_alert=False)
     imdb = await get_poster(query=movie, id=True)
-    btn = [[InlineKeyboardButton(text=f"{imdb.get('title')}", url=imdb['url'])]]
-    message = quer_y.message.reply_to_message or quer_y.message
-    if imdb:
-        try:
-            caption = IMDB_TEMPLATE.format(
-                query=imdb['title'],
-                title=imdb['title'],
-                votes=imdb['votes'],
-                aka=imdb["aka"],
-                seasons=imdb["seasons"],
-                box_office=imdb['box_office'],
-                localized_title=imdb['localized_title'],
-                kind=imdb['kind'],
-                imdb_id=imdb["imdb_id"],
-                cast=imdb["cast"],
-                runtime=imdb["runtime"],
-                countries=imdb["countries"],
-                certificates=imdb["certificates"],
-                languages=imdb["languages"],
-                director=imdb["director"],
-                writer=imdb["writer"],
-                producer=imdb["producer"],
-                composer=imdb["composer"],
-                cinematographer=imdb["cinematographer"],
-                music_team=imdb["music_team"],
-                distributors=imdb["distributors"],
-                release_date=imdb['release_date'],
-                year=imdb['year'],
-                genres=imdb['genres'],
-                poster=imdb['poster'],
-                plot=imdb['plot'],
-                rating=imdb['rating'],
-                url=imdb['url'],
-            )
-        except Exception as e:
-            logger.exception(e)
-            caption = f"<b>{imdb.get('title')}</b>"
-    else:
-        caption = "No Results"
 
-    if imdb and imdb.get('poster'):
+    if not imdb:
+        await quer_y.message.edit("❌ No IMDb results found.")
+        return
+
+    btn = [
+        [InlineKeyboardButton(text="🎬 IMDb Page", url=imdb['url'])],
+    ]
+    if imdb.get('trailer'):
+        btn[0].append(InlineKeyboardButton(text="▶️ Trailer", url=imdb['trailer']))
+
+    try:
+        caption = IMDB_TEMPLATE.format(
+            query=imdb['title'],
+            title=imdb['title'],
+            votes=imdb['votes'],
+            aka=imdb["aka"],
+            seasons=imdb["seasons"],
+            box_office=imdb['box_office'],
+            localized_title=imdb['localized_title'],
+            kind=imdb['kind'],
+            imdb_id=imdb["imdb_id"],
+            cast=imdb["cast"],
+            runtime=imdb["runtime"],
+            countries=imdb["countries"],
+            certificates=imdb["certificates"],
+            languages=imdb["languages"],
+            director=imdb["director"],
+            writer=imdb["writer"],
+            producer=imdb["producer"],
+            composer=imdb["composer"],
+            cinematographer=imdb["cinematographer"],
+            music_team=imdb["music_team"],
+            distributors=imdb["distributors"],
+            release_date=imdb['release_date'],
+            year=imdb['year'],
+            genres=imdb['genres'],
+            poster=imdb['poster'],
+            plot=imdb['plot'],
+            rating=imdb['rating'],
+            url=imdb['url'],
+        )
+    except Exception as e:
+        logger.exception(e)
+        caption = f"<b>🎬 {imdb.get('title')}</b>\n\n⭐️ Rating: {imdb.get('rating')}/10\n🎭 {imdb.get('genres')}"
+
+    if imdb.get('poster'):
         try:
             await quer_y.message.reply_photo(
-                photo=imdb['poster'], caption=caption,
-                reply_markup=InlineKeyboardMarkup(btn)
+                photo=imdb['poster'],
+                caption=caption[:1024],
+                reply_markup=InlineKeyboardMarkup(btn),
+                parse_mode=enums.ParseMode.HTML
             )
         except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
-            pic = imdb.get('poster')
-            poster = pic.replace('.jpg', "._V1_UX360.jpg")
-            await quer_y.message.reply_photo(
-                photo=poster, caption=caption,
-                reply_markup=InlineKeyboardMarkup(btn)
-            )
+            poster = imdb['poster'].replace('.jpg', "._V1_UX360.jpg")
+            try:
+                await quer_y.message.reply_photo(
+                    photo=poster,
+                    caption=caption[:1024],
+                    reply_markup=InlineKeyboardMarkup(btn),
+                    parse_mode=enums.ParseMode.HTML
+                )
+            except Exception:
+                await quer_y.message.reply(
+                    caption[:4096],
+                    reply_markup=InlineKeyboardMarkup(btn),
+                    parse_mode=enums.ParseMode.HTML,
+                    disable_web_page_preview=True
+                )
         except Exception as e:
             logger.exception(e)
             await quer_y.message.reply(
-                caption, reply_markup=InlineKeyboardMarkup(btn),
-                disable_web_page_preview=False
+                caption[:4096],
+                reply_markup=InlineKeyboardMarkup(btn),
+                parse_mode=enums.ParseMode.HTML,
+                disable_web_page_preview=True
             )
         await quer_y.message.delete()
     else:
         await quer_y.message.edit(
-            caption, reply_markup=InlineKeyboardMarkup(btn),
-            disable_web_page_preview=False
+            caption[:4096],
+            reply_markup=InlineKeyboardMarkup(btn),
+            parse_mode=enums.ParseMode.HTML,
+            disable_web_page_preview=True
         )
-    await quer_y.answer()
