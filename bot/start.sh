@@ -16,4 +16,7 @@ fi
 # Install dependencies
 pip install -q -r requirements.txt
 
+# Validate environment variables before launching
+python3 validate_env.py
+
 exec python3 bot.py
