@@ -3,12 +3,17 @@ set -e
 
 cd "$(dirname "$0")"
 
-# Load .env if present (development convenience)
+# Load .env if present (development convenience — POSIX-safe)
 if [ -f ../.env ]; then
-  export $(grep -v '^#' ../.env | xargs -d '\n')
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+    export "$line"
+  done < ../.env
 fi
 
-# Install dependencies if needed
+# Install dependencies
 pip install -q -r requirements.txt
 
 exec python3 bot.py

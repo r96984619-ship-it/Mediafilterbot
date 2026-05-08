@@ -1,11 +1,21 @@
 import logging
 import logging.config
+import asyncio
+import os
 
 logging.config.fileConfig('logging.conf')
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("imdbpy").setLevel(logging.ERROR)
 logging.getLogger("cinemagoer").setLevel(logging.ERROR)
+
+# Use uvloop for faster asyncio on Linux (Railway)
+try:
+    import uvloop
+    uvloop.install()
+    logging.info("uvloop installed as asyncio event loop.")
+except ImportError:
+    pass
 
 from pyrogram import Client, __version__
 from pyrogram.raw.all import layer
@@ -15,6 +25,24 @@ from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_STR
 from utils import temp
 from typing import Union, Optional, AsyncGenerator
 from pyrogram import types
+
+
+async def _health_server():
+    """Tiny HTTP server that binds to $PORT for Railway health checks."""
+    from aiohttp import web
+    port = int(os.environ.get("PORT", 8080))
+
+    async def handle(_request):
+        return web.Response(text="OK")
+
+    app = web.Application()
+    app.router.add_get("/", handle)
+    app.router.add_get("/health", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logging.info(f"Health check server running on port {port}.")
 
 
 class Bot(Client):
@@ -31,6 +59,8 @@ class Bot(Client):
         )
 
     async def start(self):
+        # Start health check server for Railway / cloud platforms
+        asyncio.get_event_loop().create_task(_health_server())
         try:
             b_users, b_chats = await db.get_banned()
             temp.BANNED_USERS = b_users
