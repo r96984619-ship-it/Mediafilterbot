@@ -15,5 +15,5 @@ async def restart_bot(client: Client, message: Message):
         parse_mode="html"
     )
     logger.info(f"Restart triggered by admin {message.from_user.id}")
-    # Replace current process with a fresh one — Railway keeps the container running
+    await client.stop()
     os.execv(sys.executable, [sys.executable, "bot.py"])
