@@ -60,7 +60,7 @@ class Bot(Client):
 
     async def start(self):
         # Start health check server for Railway / cloud platforms
-        asyncio.get_event_loop().create_task(_health_server())
+        asyncio.create_task(_health_server())
         try:
             b_users, b_chats = await db.get_banned()
             temp.BANNED_USERS = b_users
