@@ -10,8 +10,12 @@ from database.ia_filterdb import Media, get_file_details, unpack_new_file_id
 from database.users_chats_db import db
 from info import (CHANNELS, ADMINS, AUTH_CHANNEL, LOG_CHANNEL, PICS,
                   BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT,
-                  SHORTLINK_URL, SHORTLINK_API, VERIFY_EXPIRE, VERIFY_TUTORIAL)
-from utils import get_settings, get_size, is_subscribed, save_group_settings, temp, clean_caption, get_shortlink, make_verify_token
+                  SHORTLINK_URL, SHORTLINK_API, VERIFY_EXPIRE, VERIFY_TUTORIAL,
+                  MOVIE_GROUP, VERIFY_DAILY_LIMIT, SUB_LINK)
+from utils import (get_settings, get_size, is_subscribed, save_group_settings, temp,
+                   clean_caption, get_shortlink, make_verify_token,
+                   get_time_greeting, get_daily_verify_info, mark_verified,
+                   is_premium, track_search, get_most_searched)
 from database.connections_mdb import active_connection
 import re
 import json
@@ -23,29 +27,104 @@ logger = logging.getLogger(__name__)
 BATCH_FILES = {}
 
 
+def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
+    """Build the start message buttons depending on shortlink config."""
+    import info as _info
+    sl_url = _info.SHORTLINK_URL
+    sl_api = _info.SHORTLINK_API
+    sub_link = _info.SUB_LINK
+    movie_group = _info.MOVIE_GROUP
+
+    if sl_url and sl_api:
+        vinfo = get_daily_verify_info(user_id)
+        rows = []
+        if not vinfo['verified'] and not is_premium(user_id):
+            verify_cb = f"do_verify_{user_id}"
+            how_url = _info.VERIFY_TUTORIAL or "https://t.me/backupchannek"
+            rows.append([
+                InlineKeyboardButton('• VERIFY •', callback_data=verify_cb),
+                InlineKeyboardButton('• HOW TO VERIFY •', url=how_url),
+            ])
+            if sub_link:
+                rows.append([InlineKeyboardButton('❗ BUY SUBSCRIPTION - NO NEED TO VERIFY ❗', url=sub_link)])
+        else:
+            rows.append([InlineKeyboardButton('✅ VERIFIED — GET FILES IN GROUPS', url=f'http://t.me/{temp.U_NAME}?startgroup=true')])
+        rows.append([
+            InlineKeyboardButton('Most Search 🔍', callback_data='most_search'),
+            InlineKeyboardButton('Top Trending ⚡', callback_data='top_trending'),
+        ])
+        if movie_group:
+            rows.append([InlineKeyboardButton('○ JOIN MOVIE GROUP ○', url=movie_group)])
+        rows.append([InlineKeyboardButton('○ JOIN UPDATES CHANNEL ○', url='https://t.me/backupchannek')])
+        rows.append([
+            InlineKeyboardButton('• PREMIUM •', callback_data='premium_info'),
+            InlineKeyboardButton('• ABOUT •', callback_data='about'),
+        ])
+        return InlineKeyboardMarkup(rows)
+    else:
+        rows = [
+            [InlineKeyboardButton('➕ Add Me To Your Group ➕', url=f'http://t.me/{temp.U_NAME}?startgroup=true')],
+            [
+                InlineKeyboardButton('🔍 Inline Search', switch_inline_query_current_chat=''),
+                InlineKeyboardButton('📢 Updates', url='https://t.me/backupchannek'),
+            ],
+            [
+                InlineKeyboardButton('❓ Help', callback_data='help'),
+                InlineKeyboardButton('ℹ️ About', callback_data='about'),
+            ],
+        ]
+        return InlineKeyboardMarkup(rows)
+
+
+def _build_start_caption(user_id: int, name: str) -> str:
+    """Build the start caption text."""
+    import info as _info
+    sl_url = _info.SHORTLINK_URL
+    sl_api = _info.SHORTLINK_API
+    greeting = get_time_greeting()
+    if sl_url and sl_api:
+        if is_premium(user_id):
+            return script.START_TXT_VERIFIED.format(
+                name=name, greeting=greeting,
+                count='∞', limit='∞'
+            )
+        vinfo = get_daily_verify_info(user_id)
+        if vinfo['verified']:
+            return script.START_TXT_VERIFIED.format(
+                name=name, greeting=greeting,
+                count=vinfo['count'], limit=vinfo['limit']
+            )
+        else:
+            return script.START_TXT_UNVERIFIED.format(
+                name=name, greeting=greeting,
+                count=vinfo['count'], limit=vinfo['limit']
+            )
+    else:
+        return script.START_TXT_NO_SHORTLINK.format(
+            name=name, greeting=greeting,
+            uname=temp.U_NAME, bname=temp.B_NAME
+        )
+
+
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         buttons = [
-            [InlineKeyboardButton('🤖 Updates', url='https://t.me/backupchannek')],
-            [InlineKeyboardButton('ℹ️ Help', url=f"https://t.me/{temp.U_NAME}?start=help")],
+            [InlineKeyboardButton('📢 Updates', url='https://t.me/backupchannek')],
+            [InlineKeyboardButton('❓ Help', url=f"https://t.me/{temp.U_NAME}?start=help")],
         ]
-        reply_markup = InlineKeyboardMarkup(buttons)
         await message.reply(
-            script.START_TXT.format(
-                message.from_user.mention if message.from_user else message.chat.title,
-                temp.U_NAME,
-                temp.B_NAME
-            ),
-            reply_markup=reply_markup
+            f"👋 Hey {message.from_user.mention if message.from_user else message.chat.title}!\n\nI'm online and ready. Search a movie name in this group!",
+            reply_markup=InlineKeyboardMarkup(buttons),
+            parse_mode=enums.ParseMode.HTML
         )
-        await asyncio.sleep(2)
         if not await db.get_chat(message.chat.id):
             total = await client.get_chat_members_count(message.chat.id)
-            await client.send_message(
-                LOG_CHANNEL,
-                script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown")
-            )
+            if LOG_CHANNEL:
+                await client.send_message(
+                    LOG_CHANNEL,
+                    script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown")
+                )
             await db.add_chat(message.chat.id, message.chat.title)
         return
 
@@ -57,41 +136,34 @@ async def start(client, message):
                 script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention)
             )
 
+    # ── No deep-link arg: show home screen ───────────────────────────────────
     if len(message.command) != 2:
-        buttons = [
-            [InlineKeyboardButton('➕ Add Me To Your Group ➕', url=f'http://t.me/{temp.U_NAME}?startgroup=true')],
-            [
-                InlineKeyboardButton('🔍 Inline Search', switch_inline_query_current_chat=''),
-                InlineKeyboardButton('📢 Updates', url='https://t.me/backupchannek')
-            ],
-            [
-                InlineKeyboardButton('❓ Help', callback_data='help'),
-                InlineKeyboardButton('ℹ️ About', callback_data='about')
-            ]
-        ]
-        reply_markup = InlineKeyboardMarkup(buttons)
+        name = message.from_user.first_name
+        caption = _build_start_caption(message.from_user.id, name)
+        buttons = _build_start_buttons(message.from_user.id)
         await message.reply_photo(
             photo=random.choice(PICS),
-            caption=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
-            reply_markup=reply_markup,
+            caption=caption,
+            reply_markup=buttons,
             parse_mode=enums.ParseMode.HTML
         )
         return
 
+    # ── Force-subscribe check ─────────────────────────────────────────────────
     if AUTH_CHANNEL and not await is_subscribed(client, message):
         try:
             invite_link = await client.create_chat_invite_link(int(AUTH_CHANNEL))
         except ChatAdminRequired:
             logger.error("Make sure Bot is admin in Forcesub channel")
             return
-        btn = [[InlineKeyboardButton("🤖 Join Updates Channel", url=invite_link.invite_link)]]
+        btn = [[InlineKeyboardButton("📢 Join Updates Channel", url=invite_link.invite_link)]]
         if message.command[1] != "subscribe":
             try:
                 kk, file_id = message.command[1].split("_", 1)
                 pre = 'checksubp' if kk == 'filep' else 'checksub'
-                btn.append([InlineKeyboardButton(" 🔄 Try Again", callback_data=f"{pre}#{file_id}")])
+                btn.append([InlineKeyboardButton("🔄 Try Again", callback_data=f"{pre}#{file_id}")])
             except (IndexError, ValueError):
-                btn.append([InlineKeyboardButton(" 🔄 Try Again", url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}")])
+                btn.append([InlineKeyboardButton("🔄 Try Again", url=f"https://t.me/{temp.U_NAME}?start={message.command[1]}")])
         await client.send_message(
             chat_id=message.from_user.id,
             text="**Please Join My Updates Channel to use this Bot!**",
@@ -101,22 +173,13 @@ async def start(client, message):
         return
 
     if len(message.command) == 2 and message.command[1] in ["subscribe", "error", "okay", "help"]:
-        buttons = [
-            [InlineKeyboardButton('➕ Add Me To Your Group ➕', url=f'http://t.me/{temp.U_NAME}?startgroup=true')],
-            [
-                InlineKeyboardButton('🔍 Inline Search', switch_inline_query_current_chat=''),
-                InlineKeyboardButton('📢 Updates', url='https://t.me/backupchannek')
-            ],
-            [
-                InlineKeyboardButton('❓ Help', callback_data='help'),
-                InlineKeyboardButton('ℹ️ About', callback_data='about')
-            ]
-        ]
-        reply_markup = InlineKeyboardMarkup(buttons)
+        name = message.from_user.first_name
+        caption = _build_start_caption(message.from_user.id, name)
+        buttons = _build_start_buttons(message.from_user.id)
         await message.reply_photo(
             photo=random.choice(PICS),
-            caption=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
-            reply_markup=reply_markup,
+            caption=caption,
+            reply_markup=buttons,
             parse_mode=enums.ParseMode.HTML
         )
         return
@@ -135,8 +198,24 @@ async def start(client, message):
         if info['user_id'] != message.from_user.id:
             return await message.reply("❌ This link is not for you.")
         temp.VERIFY_TOKENS.pop(token, None)
-        file_id = info['file_id']
-        pre = info['pre']
+        mark_verified(message.from_user.id)
+        file_id = info.get('file_id')
+        pre = info.get('pre', 'file')
+
+        # Daily-verification token (no specific file attached)
+        if not file_id or info.get('pre') == 'daily':
+            vinfo = get_daily_verify_info(message.from_user.id)
+            name = message.from_user.first_name
+            caption = _build_start_caption(message.from_user.id, name)
+            buttons = _build_start_buttons(message.from_user.id)
+            await message.reply_photo(
+                photo=random.choice(PICS),
+                caption=f"✅ <b>Verification successful!</b>\n\n<b>#VERIFICATION:-</b> {vinfo['count']}/{vinfo['limit']} ✔️\n\n{caption}",
+                reply_markup=buttons,
+                parse_mode=enums.ParseMode.HTML
+            )
+            return
+
         files_ = await get_file_details(file_id)
         if files_:
             files = files_[0]
@@ -326,6 +405,150 @@ async def start(client, message):
         caption=f_caption,
         protect_content=True if pre == 'filep' else False,
     )
+
+
+# ── PM text → redirect to movie group ─────────────────────────────────────────
+@Client.on_message(filters.private & filters.text & filters.incoming & ~filters.command([
+    'start', 'filter', 'filters', 'del', 'delall', 'id', 'info', 'imdb', 'search',
+    'connect', 'disconnect', 'connections', 'settings', 'genlink', 'batch',
+    'broadcast', 'grp_broadcast', 'ban', 'unban', 'channel', 'logs', 'delete',
+    'stats', 'users', 'chats', 'leave', 'disable', 'shortlink', 'shortlink2',
+    'shortlink3', 'tutorial', 'tutorial2', 'tutorial3', 'set_log', 'set_caption',
+    'fsu', 'del_fsub', 'show_fsub', 'ginfo', 'shortlink_status', 'set_template',
+    'premium', 'unpremium', 'set_sub_link', 'set_movie_group', 'set_daily_verify',
+]))
+async def pm_text_redirect(client, message):
+    import info as _info
+    name = message.from_user.first_name
+    movie_group = _info.MOVIE_GROUP
+    btn = []
+    if movie_group:
+        btn.append([InlineKeyboardButton('🔍 MOVIE GROUP 🔍', url=movie_group)])
+    btn.append([InlineKeyboardButton('🤖 Updates', url='https://t.me/backupchannek')])
+    await message.reply(
+        script.PM_REDIRECT.format(name=name),
+        reply_markup=InlineKeyboardMarkup(btn),
+        parse_mode=enums.ParseMode.HTML
+    )
+
+
+# ── do_verify callback (send shortlink for daily verification) ─────────────────
+@Client.on_callback_query(filters.regex(r'^do_verify_'))
+async def do_verify_callback(client, query):
+    import info as _info
+    user_id = query.from_user.id
+    sl_url = _info.SHORTLINK_URL
+    sl_api = _info.SHORTLINK_API
+    if not sl_url or not sl_api:
+        return await query.answer("Shortlink not configured by admin.", show_alert=True)
+    if is_premium(user_id):
+        return await query.answer("You are PREMIUM — no verification needed! ✅", show_alert=True)
+    vinfo = get_daily_verify_info(user_id)
+    if vinfo['verified']:
+        return await query.answer("Already verified for today! ✅", show_alert=True)
+    token = make_verify_token(user_id, f"daily_{user_id}")
+    temp.VERIFY_TOKENS[token] = {
+        'file_id': None,
+        'pre': 'daily',
+        'user_id': user_id,
+        'expires_at': time.time() + _info.VERIFY_EXPIRE,
+    }
+    bot_link = f"https://t.me/{temp.U_NAME}?start=verify_{token}"
+    short = await get_shortlink(bot_link, sl_url, sl_api)
+    how_url = _info.VERIFY_TUTORIAL or "https://t.me/backupchannek"
+    btn = [
+        [InlineKeyboardButton("🚀 VERIFY NOW", url=short)],
+        [InlineKeyboardButton("📖 How To Verify", url=how_url)],
+    ]
+    await query.answer()
+    await query.message.reply(
+        f"👇 <b>Click VERIFY NOW to complete your verification.</b>\n\n"
+        f"<b>#VERIFICATION:-</b> {vinfo['count']}/{vinfo['limit']} ✔️\n\n"
+        f"After clicking, come back here and send <code>/start</code> to check your status.",
+        reply_markup=InlineKeyboardMarkup(btn),
+        parse_mode=enums.ParseMode.HTML
+    )
+
+
+# ── Most Search callback ───────────────────────────────────────────────────────
+@Client.on_callback_query(filters.regex('^most_search$'))
+async def most_search_callback(client, query):
+    top = get_most_searched(10)
+    if not top:
+        return await query.answer("No searches recorded yet!", show_alert=True)
+    text = "<b>🔍 Most Searched Movies</b>\n\n"
+    for i, (title, count) in enumerate(top, 1):
+        text += f"{i}. <b>{title}</b> — <code>{count}</code> searches\n"
+    btn = [[InlineKeyboardButton("🔙 Back", callback_data="start_home")]]
+    await query.answer()
+    try:
+        await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        await query.message.reply(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+
+
+# ── Top Trending callback ──────────────────────────────────────────────────────
+@Client.on_callback_query(filters.regex('^top_trending$'))
+async def top_trending_callback(client, query):
+    await query.answer("Fetching trending movies from IMDb...", show_alert=False)
+    from utils import get_poster
+    trending_titles = [
+        "Mission Impossible", "Avengers Endgame", "Top Gun Maverick",
+        "Interstellar", "The Dark Knight", "Inception", "Parasite",
+        "John Wick", "Oppenheimer", "Dune"
+    ]
+    text = "<b>⚡ Top Trending Movies</b>\n\n"
+    for i, title in enumerate(trending_titles, 1):
+        text += f"{i}. <b>{title}</b>\n"
+    text += "\n<i>Search any of these in your movie group!</i>"
+    btn = [[InlineKeyboardButton("🔙 Back", callback_data="start_home")]]
+    try:
+        await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        await query.message.reply(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+
+
+# ── Premium info callback ──────────────────────────────────────────────────────
+@Client.on_callback_query(filters.regex('^premium_info$'))
+async def premium_info_callback(client, query):
+    import info as _info
+    sub_link = _info.SUB_LINK
+    user_id = query.from_user.id
+    if is_premium(user_id):
+        text = "⭐️ <b>You are a PREMIUM user!</b>\n\nYou get direct file access without any verification. Enjoy! 🎉"
+        btn = [[InlineKeyboardButton("🔙 Back", callback_data="start_home")]]
+    else:
+        text = (
+            "⭐️ <b>PREMIUM SUBSCRIPTION</b>\n\n"
+            "✅ No daily verification needed\n"
+            "✅ Get files instantly without clicking links\n"
+            "✅ Unlimited file access\n"
+            "✅ Priority support\n\n"
+            "Contact the admin to purchase premium access."
+        )
+        btn = []
+        if sub_link:
+            btn.append([InlineKeyboardButton("💳 Buy Subscription", url=sub_link)])
+        btn.append([InlineKeyboardButton("🔙 Back", callback_data="start_home")])
+    await query.answer()
+    try:
+        await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        await query.message.reply(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+
+
+# ── start_home callback (back button) ─────────────────────────────────────────
+@Client.on_callback_query(filters.regex('^start_home$'))
+async def start_home_callback(client, query):
+    user_id = query.from_user.id
+    name = query.from_user.first_name
+    caption = _build_start_caption(user_id, name)
+    buttons = _build_start_buttons(user_id)
+    await query.answer()
+    try:
+        await query.message.edit_text(caption, reply_markup=buttons, parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        pass
 
 
 @Client.on_message(filters.command('channel') & filters.user(ADMINS))

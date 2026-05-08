@@ -1,7 +1,27 @@
 class script(object):
-    START_TXT = """<b>Hey {},</b>
 
-I am <a href="https://t.me/{}">{}</a> — a powerful movie search bot.
+    # ── Start / Home ─────────────────────────────────────────────────────────
+
+    START_TXT_VERIFIED = """👋 <b>HEY {name} {greeting},</b>
+
+✅ <b>YOU ARE VERIFIED FOR TODAY!</b>
+
+<b>#VERIFICATION:-</b> {count}/{limit} ✔️
+
+You can now get files directly without any verification.
+Enjoy unlimited access till midnight! 🎬"""
+
+    START_TXT_UNVERIFIED = """👋 <b>HEY {name} {greeting},</b>
+
+🚀 <b>YOU ARE NOT VERIFIED TODAY, PLEASE CLICK ON VERIFY & GET UNLIMITED ACCESS FOR TILL NEXT VERIFICATION</b>
+
+<b>#VERIFICATION:-</b> {count}/{limit} ✔️
+
+IF YOU WANT DIRECT FILES WITHOUT ANY VERIFICATIONS THEN BUY BOT SUBSCRIPTION."""
+
+    START_TXT_NO_SHORTLINK = """👋 <b>HEY {name} {greeting},</b>
+
+I am <a href="https://t.me/{uname}">{bname}</a> — a powerful movie search bot.
 
 🔍 Just type a movie name in your group and I'll find it instantly.
 
@@ -12,6 +32,15 @@ I am <a href="https://t.me/{}">{}</a> — a powerful movie search bot.
 • Generate sharing links
 
 Add me to your group and enjoy! 🎬"""
+
+    # ── PM redirect ───────────────────────────────────────────────────────────
+
+    PM_REDIRECT = """<b>HEY {name},</b>
+
+I CANT GIVE MOVIE HERE
+I WORK ONLY IN GROUPS 📢"""
+
+    # ── Help ─────────────────────────────────────────────────────────────────
 
     HELP_TXT = """<b>📚 Help Menu — {}</b>
 
@@ -39,9 +68,6 @@ This bot is based on the open-source EvaMaria project.
 
 Set automated replies for specific keywords in your group.
 
-<b>How it works:</b>
-When a user sends a keyword, the bot replies with a preset message or file.
-
 <b>Notes:</b>
 • Bot must be admin in the group
 • Only group admins can add filters
@@ -55,18 +81,11 @@ When a user sends a keyword, the bot replies with a preset message or file.
 
     BUTTON_TXT = """<b>🔘 Button Syntax</b>
 
-The bot supports URL buttons and Alert buttons in filters.
-
 <b>URL Button:</b>
 <code>[Button Text](buttonurl:https://t.me/backupchannek)</code>
 
 <b>Alert Button:</b>
-<code>[Button Text](buttonalert:Your alert message here)</code>
-
-<b>Notes:</b>
-• Content is required alongside buttons
-• Works with any media type (photo, video, document)
-• Use proper markdown formatting"""
+<code>[Button Text](buttonalert:Your alert message here)</code>"""
 
     AUTOFILTER_TXT = """<b>🔍 Auto Filter</b>
 
@@ -74,21 +93,12 @@ I automatically search indexed channels when users type movie names in a group.
 
 <b>Setup:</b>
 1. Make me admin of your private channel
-2. Make sure channel has clean, real files
-3. Forward the last message to me (with quotes)
-4. I'll index all files in that channel
-
-<b>Notes:</b>
-• No cam-rips or fake files
-• Channels must be added by an admin"""
+2. Forward the last message to me (with quotes)
+3. I'll index all files in that channel"""
 
     CONNECTION_TXT = """<b>🔗 Group Connections</b>
 
 Connect groups to your PM for managing filters without spamming.
-
-<b>Notes:</b>
-• Only group admins can add a connection
-• Use /connect in the group first
 
 <b>Commands:</b>
 • /connect — Connect a group to your PM
@@ -98,35 +108,42 @@ Connect groups to your PM for managing filters without spamming.
     EXTRAMOD_TXT = """<b>🧩 Extra Modules</b>
 
 <b>Commands:</b>
-• /id — Get your or a user's Telegram ID
+• /id — Get your Telegram ID
 • /info — Get detailed info about a user
 • /imdb — Search IMDb for a movie or show
 • /search — Search IMDb by title"""
 
     ADMIN_TXT = """<b>🛠 Admin Commands</b>
 
-<b>Commands:</b>
+<b>General:</b>
 • /logs — Get recent error logs
 • /stats — Show database statistics
-• /delete — Delete a file from the database
+• /delete — Delete a file from DB
 • /users — List all bot users
 • /chats — List all connected chats
 • /leave — Leave a chat
 • /disable — Disable a chat
 • /ban — Ban a user
 • /unban — Unban a user
-• /channel — List connected index channels
-• /broadcast — Broadcast a message to all users
+• /channel — List connected channels
+• /broadcast — Broadcast to all users
 • /grp_broadcast — Broadcast to all groups
 
-<b>Shortlink Commands:</b>
-• /shortlink — Set shortlink 1
+<b>Shortlink & Monetization:</b>
+• /shortlink &lt;url&gt; &lt;api&gt; — Set shortlink 1
 • /shortlink_status — Check shortlink status
-• /fsu — Set force subscribe channel
+• /set_daily_verify &lt;n&gt; — Set verifications per day
+• /fsu &lt;channel&gt; — Force subscribe channel
 • /del_fsub — Remove force subscribe
-• /tutorial — Set bypass tutorial video
+• /tutorial &lt;url&gt; — Set bypass tutorial video
 • /set_caption — Set custom file caption
-• /set_log — Set log channel"""
+• /set_log — Set log channel
+
+<b>Premium:</b>
+• /premium &lt;user_id&gt; — Grant premium to user
+• /unpremium &lt;user_id&gt; — Remove premium
+• /set_sub_link &lt;url&gt; — Set subscription buy link
+• /set_movie_group &lt;url&gt; — Set movie group link"""
 
     STATUS_TXT = """<b>📊 Bot Statistics</b>
 

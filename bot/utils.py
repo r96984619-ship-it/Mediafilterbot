@@ -79,7 +79,63 @@ class temp(object):
     U_NAME = None
     B_NAME = None
     SETTINGS = {}
-    VERIFY_TOKENS = {}   # token -> {file_id, pre, expires_at, user_id}
+    VERIFY_TOKENS = {}    # token -> {file_id, pre, expires_at, user_id}
+    DAILY_VERIFY = {}     # user_id -> {date: 'YYYY-MM-DD', count: N}
+    PREMIUM_USERS = set() # user_ids with premium (bypass verify)
+    MOST_SEARCHED = {}    # movie_name -> count
+
+
+# ── Greeting / Verify helpers ─────────────────────────────────────────────────
+
+def get_time_greeting() -> str:
+    from datetime import datetime
+    hour = datetime.now().hour
+    if hour < 12:
+        return "GOOD MORNING"
+    elif hour < 17:
+        return "GOOD AFTERNOON"
+    else:
+        return "GOOD EVENING"
+
+
+def get_daily_verify_info(user_id: int) -> dict:
+    """Return {count, verified} for user's current day."""
+    from datetime import date
+    import info as _info
+    today = str(date.today())
+    entry = temp.DAILY_VERIFY.get(user_id)
+    if not entry or entry.get('date') != today:
+        entry = {'date': today, 'count': 0}
+        temp.DAILY_VERIFY[user_id] = entry
+    count = entry['count']
+    limit = _info.VERIFY_DAILY_LIMIT
+    return {'count': count, 'limit': limit, 'verified': count >= limit}
+
+
+def mark_verified(user_id: int):
+    """Increment user's daily verify count."""
+    from datetime import date
+    today = str(date.today())
+    entry = temp.DAILY_VERIFY.get(user_id)
+    if not entry or entry.get('date') != today:
+        entry = {'date': today, 'count': 0}
+    entry['count'] += 1
+    temp.DAILY_VERIFY[user_id] = entry
+
+
+def is_premium(user_id: int) -> bool:
+    return user_id in temp.PREMIUM_USERS
+
+
+def track_search(query: str):
+    """Increment search counter for a query."""
+    key = query.strip().lower().title()
+    temp.MOST_SEARCHED[key] = temp.MOST_SEARCHED.get(key, 0) + 1
+
+
+def get_most_searched(top_n: int = 10) -> list:
+    """Return list of (title, count) sorted by count desc."""
+    return sorted(temp.MOST_SEARCHED.items(), key=lambda x: x[1], reverse=True)[:top_n]
 
 
 # ── IMDb helpers ──────────────────────────────────────────────────────────────

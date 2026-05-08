@@ -18,7 +18,10 @@ from info import (ADMINS, AUTH_CHANNEL, AUTH_USERS, CUSTOM_FILE_CAPTION,
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid
-from utils import get_size, is_subscribed, get_poster, search_gagala, temp, get_settings, save_group_settings, clean_caption, get_shortlink, make_verify_token
+from utils import (get_size, is_subscribed, get_poster, search_gagala, temp,
+                   get_settings, save_group_settings, clean_caption,
+                   get_shortlink, make_verify_token, get_daily_verify_info,
+                   is_premium, track_search, get_most_searched, get_time_greeting)
 import time
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results
@@ -392,46 +395,57 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 await query.answer(url=f"https://t.me/{temp.U_NAME}?start={ident}_{file_id}")
                 return
 
-            # ── Shortlink monetization ────────────────────────────────────
+            # ── Shortlink / Verify monetization ──────────────────────────
             import info as _info
             sl_url = _info.SHORTLINK_URL
             sl_api = _info.SHORTLINK_API
-            if sl_url and sl_api:
-                token = make_verify_token(query.from_user.id, file_id)
-                temp.VERIFY_TOKENS[token] = {
-                    'file_id': file_id,
-                    'pre': ident,
-                    'user_id': query.from_user.id,
-                    'expires_at': time.time() + _info.VERIFY_EXPIRE,
-                }
-                bot_link = f"https://t.me/{temp.U_NAME}?start=verify_{token}"
-                short = await get_shortlink(bot_link, sl_url, sl_api)
-                btn = [[InlineKeyboardButton("🔗 Get File", url=short)]]
-                if _info.VERIFY_TUTORIAL:
-                    btn.append([InlineKeyboardButton("📖 How to bypass", url=_info.VERIFY_TUTORIAL)])
-                await query.answer()
-                await client.send_message(
-                    chat_id=query.from_user.id,
-                    text=(
-                        f"**🎬 Your file is ready!**\n\n"
-                        f"📄 `{title}`\n"
-                        f"📦 Size: **{size}**\n\n"
-                        f"👇 Click the button below to get your file.\n"
-                        f"_(This helps support the bot ❤️)_"
-                    ),
-                    reply_markup=InlineKeyboardMarkup(btn),
-                    parse_mode=enums.ParseMode.MARKDOWN
-                )
-                return
-            # ── No shortlink — send directly ─────────────────────────────
-            else:
-                await client.send_cached_media(
-                    chat_id=query.from_user.id,
-                    file_id=file_id,
-                    caption=f_caption,
-                    protect_content=True if ident == "filep" else False
-                )
-                await query.answer('Check PM, I have sent files in pm', show_alert=True)
+            user_id = query.from_user.id
+
+            # Premium users and fully-verified users get file directly
+            if sl_url and sl_api and not is_premium(user_id):
+                vinfo = get_daily_verify_info(user_id)
+                if not vinfo['verified']:
+                    # User must verify — send shortlink
+                    token = make_verify_token(user_id, file_id)
+                    temp.VERIFY_TOKENS[token] = {
+                        'file_id': file_id,
+                        'pre': ident,
+                        'user_id': user_id,
+                        'expires_at': time.time() + _info.VERIFY_EXPIRE,
+                    }
+                    bot_link = f"https://t.me/{temp.U_NAME}?start=verify_{token}"
+                    short = await get_shortlink(bot_link, sl_url, sl_api)
+                    how_url = _info.VERIFY_TUTORIAL or "https://t.me/backupchannek"
+                    btn = [
+                        [InlineKeyboardButton("🚀 GET FILE", url=short)],
+                        [InlineKeyboardButton("📖 How To Bypass", url=how_url)],
+                    ]
+                    sub_link = _info.SUB_LINK
+                    if sub_link:
+                        btn.append([InlineKeyboardButton("❗ BUY SUBSCRIPTION — SKIP THIS", url=sub_link)])
+                    await query.answer()
+                    await client.send_message(
+                        chat_id=user_id,
+                        text=(
+                            f"<b>🎬 Your file is ready!</b>\n\n"
+                            f"📄 <code>{title}</code>\n"
+                            f"📦 Size: <b>{size}</b>\n\n"
+                            f"<b>#VERIFICATION:-</b> {vinfo['count']}/{vinfo['limit']} ✔️\n\n"
+                            f"👇 Click <b>GET FILE</b> to bypass the link and get your file."
+                        ),
+                        reply_markup=InlineKeyboardMarkup(btn),
+                        parse_mode=enums.ParseMode.HTML
+                    )
+                    return
+
+            # Verified / premium / no shortlink → send directly
+            await client.send_cached_media(
+                chat_id=query.from_user.id,
+                file_id=file_id,
+                caption=f_caption,
+                protect_content=True if ident == "filep" else False
+            )
+            await query.answer('✅ Check your PM!', show_alert=True)
         except UserIsBlocked:
             await query.answer('Unblock the bot!', show_alert=True)
         except PeerIdInvalid:
@@ -613,6 +627,8 @@ async def auto_filter(client, msg, spoll=None):
             return
 
         files, offset, total_results = await get_search_results(search, offset=0, filter=True)
+        if files:
+            track_search(search)
         if not files:
             if settings.get('spell_check') and SPELL_CHECK_REPLY:
                 return await advantage_spell_chok(msg)

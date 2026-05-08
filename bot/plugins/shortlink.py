@@ -222,6 +222,91 @@ async def group_info(bot, message):
     await message.reply(text, parse_mode="markdown")
 
 
+@Client.on_message(filters.command('premium') & filters.user(ADMINS))
+async def grant_premium(bot, message):
+    parts = message.text.strip().split(None, 1)
+    if len(parts) < 2:
+        return await message.reply("**Usage:** `/premium <user_id>`", parse_mode="markdown")
+    try:
+        uid = int(parts[1].strip())
+        from utils import temp
+        temp.PREMIUM_USERS.add(uid)
+        await message.reply(f"⭐️ **Premium granted to** `{uid}`\nThey now get files without verification.", parse_mode="markdown")
+    except ValueError:
+        await message.reply("❌ User ID must be a number.")
+
+
+@Client.on_message(filters.command('unpremium') & filters.user(ADMINS))
+async def remove_premium(bot, message):
+    parts = message.text.strip().split(None, 1)
+    if len(parts) < 2:
+        return await message.reply("**Usage:** `/unpremium <user_id>`", parse_mode="markdown")
+    try:
+        uid = int(parts[1].strip())
+        from utils import temp
+        temp.PREMIUM_USERS.discard(uid)
+        await message.reply(f"🗑 **Premium removed from** `{uid}`", parse_mode="markdown")
+    except ValueError:
+        await message.reply("❌ User ID must be a number.")
+
+
+@Client.on_message(filters.command('set_sub_link') & filters.user(ADMINS))
+async def set_sub_link(bot, message):
+    parts = message.text.strip().split(None, 1)
+    if len(parts) < 2:
+        return await message.reply("**Usage:** `/set_sub_link <url>`\n\nUsers see this as the 'Buy Subscription' button.", parse_mode="markdown")
+    url = parts[1].strip()
+    import os, info as _info
+    os.environ['SUB_LINK'] = url
+    _info.SUB_LINK = url
+    await message.reply(f"✅ **Subscription link set!**\n`{url}`", parse_mode="markdown")
+
+
+@Client.on_message(filters.command('set_movie_group') & filters.user(ADMINS))
+async def set_movie_group(bot, message):
+    parts = message.text.strip().split(None, 1)
+    if len(parts) < 2:
+        return await message.reply("**Usage:** `/set_movie_group <url or @username>`\n\nThis is the group shown when users text the bot in PM.", parse_mode="markdown")
+    url = parts[1].strip()
+    if not url.startswith('http') and not url.startswith('@'):
+        url = 'https://t.me/' + url.lstrip('@')
+    import os, info as _info
+    os.environ['MOVIE_GROUP'] = url
+    _info.MOVIE_GROUP = url
+    await message.reply(f"✅ **Movie group set!**\n`{url}`", parse_mode="markdown")
+
+
+@Client.on_message(filters.command('set_daily_verify') & filters.user(ADMINS))
+async def set_daily_verify(bot, message):
+    parts = message.text.strip().split(None, 1)
+    if len(parts) < 2:
+        return await message.reply(
+            "**Usage:** `/set_daily_verify <number>`\n\n"
+            "How many times a user must click the shortlink per day before getting direct file access.\n\n"
+            "**Example:** `/set_daily_verify 3` → users must verify 3×/day",
+            parse_mode="markdown"
+        )
+    try:
+        n = int(parts[1].strip())
+        if n < 1:
+            return await message.reply("❌ Minimum value is 1.")
+        import os, info as _info
+        os.environ['VERIFY_DAILY_LIMIT'] = str(n)
+        _info.VERIFY_DAILY_LIMIT = n
+        await message.reply(f"✅ **Daily verification limit set to** `{n}`\n\nUsers must verify {n}× per day before getting direct access.", parse_mode="markdown")
+    except ValueError:
+        await message.reply("❌ Must be a number, e.g. `/set_daily_verify 3`")
+
+
+@Client.on_message(filters.command('list_premium') & filters.user(ADMINS))
+async def list_premium(bot, message):
+    from utils import temp
+    if not temp.PREMIUM_USERS:
+        return await message.reply("No premium users at the moment.")
+    ids = '\n'.join(f'• `{uid}`' for uid in temp.PREMIUM_USERS)
+    await message.reply(f"⭐️ **Premium Users:**\n\n{ids}", parse_mode="markdown")
+
+
 @Client.on_message(filters.command('shortlink_status') & filters.user(ADMINS))
 async def shortlink_status(bot, message):
     import info as _info

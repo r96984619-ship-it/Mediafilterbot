@@ -79,6 +79,12 @@ MELCOW_NEW_USERS = is_enabled((environ.get('MELCOW_NEW_USERS', "True")), True)
 PROTECT_CONTENT = is_enabled((environ.get('PROTECT_CONTENT', "False")), False)
 PUBLIC_FILE_STORE = is_enabled((environ.get('PUBLIC_FILE_STORE', "True")), True)
 
+# Group / Premium / Subscription
+MOVIE_GROUP = environ.get('MOVIE_GROUP', '')          # e.g. https://t.me/+xxxxx or @groupname
+VERIFY_DAILY_LIMIT = int(environ.get('VERIFY_DAILY_LIMIT', 1))   # verifications needed per day
+SUB_LINK = environ.get('SUB_LINK', '')                # subscription/premium purchase link
+PREMIUM_PASS = environ.get('PREMIUM_PASS', '')        # secret pass phrase to self-activate premium
+
 # Shortlink / Monetization
 SHORTLINK_URL = environ.get('SHORTLINK_URL', '')
 SHORTLINK_API = environ.get('SHORTLINK_API', '')
