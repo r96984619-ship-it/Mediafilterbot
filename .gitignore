@@ -47,3 +47,15 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Python
+__pycache__/
+*.py[cod]
+.pythonlibs/
+
+# Pyrogram sessions (NEVER upload — contains your login)
+*.session
+*.session-journal
+
+# Logs
+*.log
