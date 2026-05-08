@@ -13,8 +13,11 @@ if [ -f ../.env ]; then
   done < ../.env
 fi
 
-# Install dependencies
-pip install -q -r requirements.txt
+# On Railway, deps are installed at build time by nixpacks.
+# In local dev (no nixpacks), install them here if needed.
+if [ "${RAILWAY_ENVIRONMENT:-}" = "" ] && [ -f requirements.txt ]; then
+  pip install -q --break-system-packages -r requirements.txt 2>/dev/null || true
+fi
 
 # Validate environment variables before launching
 python3 validate_env.py
