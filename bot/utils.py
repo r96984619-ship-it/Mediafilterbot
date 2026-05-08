@@ -24,6 +24,18 @@ SMART_CLOSE = '\u201d'
 START_CHAR = ('\'', '"', SMART_OPEN)
 
 
+def clean_caption(text: str) -> str:
+    """Replace any external @channel watermarks with @backupchannek."""
+    if not text:
+        return text
+    return re.sub(
+        r'@(?!backupchannek(?:\b|$))([A-Za-z][A-Za-z0-9_]*)',
+        '@backupchannek',
+        text,
+        flags=re.IGNORECASE
+    )
+
+
 class temp(object):
     BANNED_USERS = []
     BANNED_CHATS = []

@@ -10,7 +10,7 @@ from database.ia_filterdb import Media, get_file_details, unpack_new_file_id
 from database.users_chats_db import db
 from info import (CHANNELS, ADMINS, AUTH_CHANNEL, LOG_CHANNEL, PICS,
                   BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT)
-from utils import get_settings, get_size, is_subscribed, save_group_settings, temp
+from utils import get_settings, get_size, is_subscribed, save_group_settings, temp, clean_caption
 from database.connections_mdb import active_connection
 import re
 import json
@@ -157,6 +157,7 @@ async def start(client, message):
                     logger.exception(e)
             if f_caption is None:
                 f_caption = f"{title}"
+            f_caption = clean_caption(f_caption)
             try:
                 await client.send_cached_media(
                     chat_id=message.from_user.id,
@@ -204,6 +205,7 @@ async def start(client, message):
                 else:
                     file_name = getattr(media, 'file_name', '')
                     f_caption = getattr(msg, 'caption', file_name)
+                f_caption = clean_caption(f_caption)
                 try:
                     await msg.copy(message.chat.id, caption=f_caption,
                                    protect_content=True if protect == "/pbatch" else False)

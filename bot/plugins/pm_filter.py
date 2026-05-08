@@ -17,7 +17,7 @@ from info import (ADMINS, AUTH_CHANNEL, AUTH_USERS, CUSTOM_FILE_CAPTION,
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid
-from utils import get_size, is_subscribed, get_poster, search_gagala, temp, get_settings, save_group_settings
+from utils import get_size, is_subscribed, get_poster, search_gagala, temp, get_settings, save_group_settings, clean_caption
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results
 from database.filters_mdb import del_all, find_filter, get_filters
@@ -367,9 +367,9 @@ async def cb_handler(client: Client, query: CallbackQuery):
         if not files_:
             return await query.answer('No such file exist.')
         files = files_[0]
-        title = files.file_name
+        title = clean_caption(files.file_name)
         size = get_size(files.file_size)
-        f_caption = files.caption
+        f_caption = clean_caption(files.caption)
         settings = await get_settings(query.message.chat.id)
         if CUSTOM_FILE_CAPTION:
             try:
@@ -381,7 +381,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             except Exception as e:
                 logger.exception(e)
         if f_caption is None:
-            f_caption = f"{files.file_name}"
+            f_caption = clean_caption(files.file_name)
         try:
             if AUTH_CHANNEL and not await is_subscribed(client, query):
                 await query.answer(url=f"https://t.me/{temp.U_NAME}?start={ident}_{file_id}")
@@ -413,9 +413,9 @@ async def cb_handler(client: Client, query: CallbackQuery):
         if not files_:
             return await query.answer('No such file exist.')
         files = files_[0]
-        title = files.file_name
+        title = clean_caption(files.file_name)
         size = get_size(files.file_size)
-        f_caption = files.caption
+        f_caption = clean_caption(files.caption)
         if CUSTOM_FILE_CAPTION:
             try:
                 f_caption = CUSTOM_FILE_CAPTION.format(
@@ -426,7 +426,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             except Exception as e:
                 logger.exception(e)
         if f_caption is None:
-            f_caption = f"{title}"
+            f_caption = clean_caption(title)
         await query.answer()
         await client.send_cached_media(
             chat_id=query.from_user.id,
@@ -597,7 +597,7 @@ async def auto_filter(client, msg, spoll=None):
     if settings["button"]:
         btn = [
             [InlineKeyboardButton(
-                text=f"[{get_size(file.file_size)}] {file.file_name}",
+                text=f"[{get_size(file.file_size)}] {clean_caption(file.file_name)}",
                 callback_data=f'{pre}#{file.file_id}'
             )]
             for file in files
@@ -605,7 +605,7 @@ async def auto_filter(client, msg, spoll=None):
     else:
         btn = [
             [
-                InlineKeyboardButton(text=f"{file.file_name}", callback_data=f'{pre}#{file.file_id}'),
+                InlineKeyboardButton(text=f"{clean_caption(file.file_name)}", callback_data=f'{pre}#{file.file_id}'),
                 InlineKeyboardButton(text=f"{get_size(file.file_size)}", callback_data=f'{pre}#{file.file_id}'),
             ]
             for file in files
