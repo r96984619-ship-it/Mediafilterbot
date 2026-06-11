@@ -14,7 +14,8 @@ if USE_MONGO:
 if USE_MONGO:
     class Database:
         def __init__(self, uri, database_name):
-            self._client = motor.motor_asyncio.AsyncIOMotorClient(uri, tlsAllowInvalidCertificates=True)
+            import certifi
+            self._client = motor.motor_asyncio.AsyncIOMotorClient(uri, tlsCAFile=certifi.where())
             self.db = self._client[database_name]
             self.col = self.db.users
             self.grp = self.db.groups

@@ -610,7 +610,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         buttons = [[InlineKeyboardButton('🔙 Back', callback_data='start')]]
         reply_markup = InlineKeyboardMarkup(buttons)
         await query.message.edit_text(
-            text=script.ABOUT_TXT.format(temp.B_NAME),
+            text=script.ABOUT_TXT.format(bname=temp.B_NAME or "Miviesfather", uname=temp.U_NAME or "Miviesfather_bot"),
             reply_markup=reply_markup,
             parse_mode=enums.ParseMode.HTML,
             disable_web_page_preview=True

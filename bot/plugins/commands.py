@@ -291,7 +291,7 @@ async def start(client, message):
                     protect_content=msg.get('protect', False),
                 )
             except FloodWait as e:
-                await asyncio.sleep(e.x)
+                await asyncio.sleep(e.value)
                 await client.send_cached_media(
                     chat_id=message.from_user.id,
                     file_id=msg.get("file_id"),
@@ -335,7 +335,7 @@ async def start(client, message):
                     await msg.copy(message.chat.id, caption=f_caption,
                                    protect_content=True if protect == "/pbatch" else False)
                 except FloodWait as e:
-                    await asyncio.sleep(e.x)
+                    await asyncio.sleep(e.value)
                     await msg.copy(message.chat.id, caption=f_caption,
                                    protect_content=True if protect == "/pbatch" else False)
                 except Exception as e:
@@ -348,7 +348,7 @@ async def start(client, message):
                     await msg.copy(message.chat.id,
                                    protect_content=True if protect == "/pbatch" else False)
                 except FloodWait as e:
-                    await asyncio.sleep(e.x)
+                    await asyncio.sleep(e.value)
                     await msg.copy(message.chat.id,
                                    protect_content=True if protect == "/pbatch" else False)
                 except Exception as e:
@@ -418,6 +418,7 @@ async def start(client, message):
     'shortlink3', 'tutorial', 'tutorial2', 'tutorial3', 'set_log', 'set_caption',
     'fsu', 'del_fsub', 'show_fsub', 'ginfo', 'shortlink_status', 'set_template',
     'premium', 'unpremium', 'set_sub_link', 'set_movie_group', 'set_daily_verify',
+    'help', 'list_premium',
 ]))
 async def pm_text_redirect(client, message):
     import info as _info
@@ -553,6 +554,122 @@ async def start_home_callback(client, query):
         pass
 
 
+# ── /help command + multi-page callbacks ──────────────────────────────────────
+
+def _help_admin_buttons():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔍 GLOBAL FILTER", callback_data="help_filter"),
+            InlineKeyboardButton("👥 USER & CHAT",   callback_data="help_user_chat"),
+        ],
+        [InlineKeyboardButton("🔙 BACK", callback_data="start_home")],
+    ])
+
+def _help_filter_buttons():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 BACK", callback_data="help_admin")],
+    ])
+
+def _help_user_chat_buttons():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 BACK", callback_data="help_admin")],
+    ])
+
+def _help_user_buttons(uname):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🤖 Updates", url="https://t.me/backupchannek")],
+        [InlineKeyboardButton("🔙 Back", callback_data="start_home")],
+    ])
+
+
+@Client.on_message(filters.command('help'))
+async def help_cmd(bot, message):
+    user_id = message.from_user.id
+    if user_id in ADMINS:
+        await message.reply(
+            script.HELP_ADMIN_TXT,
+            reply_markup=_help_admin_buttons(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    else:
+        await message.reply(
+            script.HELP_USER_TXT.format(uname=temp.U_NAME or "bot"),
+            reply_markup=_help_user_buttons(temp.U_NAME),
+            parse_mode=enums.ParseMode.HTML
+        )
+
+
+@Client.on_callback_query(filters.regex('^help$'))
+async def help_callback(client, query):
+    user_id = query.from_user.id
+    await query.answer()
+    if user_id in ADMINS:
+        txt = script.HELP_ADMIN_TXT
+        btn = _help_admin_buttons()
+    else:
+        txt = script.HELP_USER_TXT.format(uname=temp.U_NAME or "bot")
+        btn = _help_user_buttons(temp.U_NAME)
+    try:
+        await query.message.edit_text(txt, reply_markup=btn, parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        await client.send_message(query.from_user.id, txt, reply_markup=btn, parse_mode=enums.ParseMode.HTML)
+
+
+@Client.on_callback_query(filters.regex('^help_admin$'))
+async def help_admin_callback(client, query):
+    await query.answer()
+    try:
+        await query.message.edit_text(
+            script.HELP_ADMIN_TXT,
+            reply_markup=_help_admin_buttons(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        pass
+
+
+@Client.on_callback_query(filters.regex('^help_filter$'))
+async def help_filter_callback(client, query):
+    await query.answer()
+    try:
+        await query.message.edit_text(
+            script.HELP_FILTER_TXT,
+            reply_markup=_help_filter_buttons(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        pass
+
+
+@Client.on_callback_query(filters.regex('^help_user_chat$'))
+async def help_user_chat_callback(client, query):
+    await query.answer()
+    try:
+        await query.message.edit_text(
+            script.HELP_USER_CHAT_TXT,
+            reply_markup=_help_user_chat_buttons(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        pass
+
+
+@Client.on_callback_query(filters.regex('^about$'))
+async def about_callback(client, query):
+    await query.answer()
+    txt = script.ABOUT_TXT.format(
+        bname=temp.B_NAME or "Miviesfather",
+        uname=temp.U_NAME or "Miviesfather_bot"
+    )
+    btn = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back", callback_data="start_home")],
+    ])
+    try:
+        await query.message.edit_text(txt, reply_markup=btn, parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        pass
+
+
 @Client.on_message(filters.command('channel') & filters.user(ADMINS))
 async def channel_info(bot, message):
     if isinstance(CHANNELS, (int, str)):
@@ -588,9 +705,111 @@ async def channel_info(bot, message):
 @Client.on_message(filters.command('logs') & filters.user(ADMINS))
 async def log_file(bot, message):
     try:
-        await message.reply_document('TelegramBot.log')
+        await message.reply_document('/tmp/TelegramBot.log')
     except Exception as e:
         await message.reply(str(e))
+
+
+# ── /stats ─────────────────────────────────────────────────────────────────────
+
+async def _build_stats_text(bot) -> str:
+    import psutil, time as _time
+    from database.ia_filterdb import Media
+
+    # DATABASE
+    try:
+        total_files = await Media.count_documents()
+    except Exception:
+        total_files = 0
+    try:
+        total_users = await db.total_users_count()
+    except Exception:
+        total_users = 0
+    try:
+        total_groups = await db.total_chat_count()
+    except Exception:
+        total_groups = 0
+    try:
+        db_size_raw = await db.get_db_size()
+        if db_size_raw >= 1024 ** 3:
+            db_size = f"{db_size_raw / 1024 ** 3:.2f} GiB"
+        elif db_size_raw >= 1024 ** 2:
+            db_size = f"{db_size_raw / 1024 ** 2:.2f} MiB"
+        elif db_size_raw >= 1024:
+            db_size = f"{db_size_raw / 1024:.2f} KiB"
+        else:
+            db_size = f"{db_size_raw} B"
+    except Exception:
+        db_size = "N/A"
+
+    # SERVER
+    elapsed = int(_time.time() - temp.BOT_START_TIME)
+    h, rem = divmod(elapsed, 3600)
+    m, s = divmod(rem, 60)
+    uptime = f"{h:02d}h {m:02d}m {s:02d}s"
+
+    cpu = psutil.cpu_percent(interval=0.3)
+    ram = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+
+    def _fmt(b):
+        if b >= 1024 ** 3:
+            return f"{b / 1024 ** 3:.2f} GiB"
+        return f"{b / 1024 ** 2:.2f} MiB"
+
+    owner = f"@{temp.U_NAME}" if temp.U_NAME else "Admin"
+
+    text = (
+        "<pre>┌─────────────────────────┐\n"
+        "│        DATABASE         │\n"
+        "└─────────────────────────┘</pre>\n"
+        f"🎬 <b>Movies Indexed</b> : <code>{total_files}</code>\n"
+        f"👤 <b>Total Users</b>    : <code>{total_users}</code>\n"
+        f"👥 <b>Total Groups</b>   : <code>{total_groups}</code>\n"
+        f"💾 <b>DB Size</b>        : <code>{db_size}</code>\n\n"
+        "<pre>┌─────────────────────────┐\n"
+        "│         SERVER          │\n"
+        "└─────────────────────────┘</pre>\n"
+        f"⏰ <b>Uptime</b>         : <code>{uptime}</code>\n"
+        f"🔥 <b>CPU Usage</b>      : <code>{cpu}%</code>\n"
+        f"💿 <b>RAM Usage</b>      : <code>{ram.percent}%</code>\n"
+        f"💽 <b>Disk Used</b>      : <code>{_fmt(disk.used)}</code>\n"
+        f"📁 <b>Disk Free</b>      : <code>{_fmt(disk.free)}</code>\n\n"
+        f"👑 <b>Owner:</b> {owner}"
+    )
+    return text
+
+
+def _stats_buttons():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔄 Refresh", callback_data="stats_refresh"),
+            InlineKeyboardButton("✖ Close",   callback_data="stats_close"),
+        ]
+    ])
+
+
+@Client.on_message(filters.command('stats') & filters.user(ADMINS))
+async def stats_cmd(bot, message):
+    msg = await message.reply("Fetching stats..", quote=True)
+    text = await _build_stats_text(bot)
+    await msg.edit_text(text, reply_markup=_stats_buttons(), parse_mode=enums.ParseMode.HTML)
+
+
+@Client.on_callback_query(filters.regex(r'^stats_refresh$'))
+async def stats_refresh(bot, query):
+    await query.answer("Refreshing...")
+    text = await _build_stats_text(bot)
+    try:
+        await query.message.edit_text(text, reply_markup=_stats_buttons(), parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        pass
+
+
+@Client.on_callback_query(filters.regex(r'^stats_close$'))
+async def stats_close(bot, query):
+    await query.answer()
+    await query.message.delete()
 
 
 @Client.on_message(filters.command('delete') & filters.user(ADMINS))

@@ -55,14 +55,119 @@ I WORK ONLY IN GROUPS 📢"""
 
 Choose a topic below to learn more 👇"""
 
+    # ── Help pages (admin) ────────────────────────────────────────────────────
+
+    HELP_ADMIN_TXT = """<b>📝 NOTE:</b>
+<i>These Modules Only Work For My Admins</i>
+
+<b>📋 Basic Command</b>
+• /logs — Get The Recent Error Logs
+• /stats — Live Database &amp; Server Stats
+
+<b>📁 Database &amp; Server Command</b>
+• /stats — Get Database Status
+• /delete — Delete A Specific File From DB
+• /deleteall — Delete All Files From DB
+• /users — List Of All Users &amp; IDs
+• /chats — List Of All Chats &amp; IDs
+• /channel — List Of All Connected Channels
+• /leave — Make Bot Leave A Chat
+• /disable — Disable A Chat
+
+<b>🔗 Indexing</b>
+• /setskip — Set Skip Count For Indexing
+• /set_log — Set Log Channel
+• /set_caption — Set Custom File Caption
+• /set_template — Set Custom IMDB Template"""
+
+    HELP_FILTER_TXT = """<b>🔍 Global Filter &amp; Auto-Filter</b>
+
+<b>Manual Filters:</b>
+• /filter — Add A New Filter
+• /filters — List All Active Filters
+• /del — Delete A Specific Filter
+• /delall — Delete All Filters (Owner Only)
+
+<b>Auto Filter (File Search):</b>
+• Forward last message of a private channel to me to index all its files
+• Users type movie names in group → bot replies with file buttons
+• /setskip &lt;n&gt; — Skip first N messages when indexing
+
+<b>Group Connection:</b>
+• /connect — Connect A Group To Your PM
+• /disconnect — Disconnect From A Group
+• /connections — List All Your Connections
+
+<b>Settings:</b>
+• /settings — Open Group Settings Menu"""
+
+    HELP_USER_CHAT_TXT = """<b>👥 User &amp; Chat Management</b>
+
+<b>Users:</b>
+• /users — Get Full Users List &amp; IDs
+• /ban &lt;user_id&gt; — Ban A User
+• /unban &lt;user_id&gt; — Unban A User
+• /id — Get Your Telegram ID
+• /info — Get Detailed Info About A User
+
+<b>Chats:</b>
+• /chats — Get All Chats List &amp; IDs
+• /leave &lt;chat_id&gt; — Make Bot Leave A Chat
+• /disable &lt;chat_id&gt; — Disable Bot In A Chat
+• /ginfo — Get Info About A Group
+
+<b>Broadcast:</b>
+• /broadcast — Send Message To All Users
+• /grp_broadcast — Send Message To All Groups
+
+<b>Force Subscribe:</b>
+• /fsu &lt;channel&gt; — Set FSub Channel 1
+• /fsu2 &lt;channel&gt; — Set FSub Channel 2
+• /fsu3 &lt;channel&gt; — Set FSub Channel 3
+• /del_fsub · /del_fsub2 · /del_fsub3 — Remove
+• /show_fsub — Show All Active FSub Channels
+
+<b>Premium &amp; Shortlink:</b>
+• /premium &lt;user_id&gt; — Give User Premium Access
+• /unpremium &lt;user_id&gt; — Remove Premium
+• /list_premium — List All Premium Users
+• /shortlink &lt;url&gt; &lt;api&gt; — Set Shortlink 1
+• /shortlink2 / /shortlink3 — Set Shortlinks 2 &amp; 3
+• /shortlink_status — Check Shortlink Config
+• /tutorial &lt;url&gt; — Set Verification Tutorial
+• /set_daily_verify &lt;n&gt; — Set Daily Verify Limit
+• /set_sub_link &lt;url&gt; — Set Subscription Buy Link
+• /set_movie_group &lt;url&gt; — Set Movie Group Link
+
+<b>Gen Link:</b>
+• /genlink — Generate Shareable File Link
+• /batch — Generate Batch File Links"""
+
+    HELP_USER_TXT = """<b>📚 How To Use Me</b>
+
+<b>🎬 Search Movies:</b>
+• Type the movie name in the group — I'll find it!
+• Use inline: @{uname} movie name
+
+<b>🔗 Links &amp; Connections:</b>
+• /connect — Connect your group to PM
+• /disconnect — Disconnect from group
+• /connections — List your connections
+
+<b>🪪 Info Commands:</b>
+• /id — Get your Telegram ID
+• /info @username — Get user info
+• /imdb &lt;title&gt; — Search IMDb
+• /search &lt;title&gt; — Search movie title"""
+
     ABOUT_TXT = """<b>⚙️ About Me</b>
 
-✦ <b>Name:</b> {}
+✦ <b>Name:</b> {bname}
+✦ <b>Username:</b> @{uname}
 ✦ <b>Creator:</b> <a href="https://t.me/backupchannek">Miviesfather</a>
-✦ <b>Library:</b> Pyrogram
-✦ <b>Language:</b> Python 3
+✦ <b>Library:</b> Pyrogram v2
+✦ <b>Language:</b> Python 3.11
 ✦ <b>Database:</b> MongoDB
-✦ <b>Server:</b> Replit
 ✦ <b>Version:</b> v2.0.0"""
 
     SOURCE_TXT = """<b>📦 Source Code</b>

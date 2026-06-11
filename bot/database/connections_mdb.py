@@ -9,7 +9,8 @@ USE_MONGO = bool(DATABASE_URI)
 if USE_MONGO:
     try:
         import pymongo
-        myclient = pymongo.MongoClient(DATABASE_URI, tlsAllowInvalidCertificates=True)
+        import certifi
+        myclient = pymongo.MongoClient(DATABASE_URI, tlsCAFile=certifi.where())
         mydb = myclient[DATABASE_NAME]
         mycol = mydb['CONNECTION']
     except Exception as e:

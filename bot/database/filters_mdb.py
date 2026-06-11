@@ -10,7 +10,8 @@ USE_MONGO = bool(DATABASE_URI)
 if USE_MONGO:
     try:
         import pymongo
-        myclient = pymongo.MongoClient(DATABASE_URI, tlsAllowInvalidCertificates=True)
+        import certifi
+        myclient = pymongo.MongoClient(DATABASE_URI, tlsCAFile=certifi.where())
         mydb = myclient[DATABASE_NAME]
     except Exception as e:
         logger.warning(f"MongoDB connection failed: {e}. Using in-memory filters.")

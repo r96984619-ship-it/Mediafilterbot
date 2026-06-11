@@ -2,6 +2,7 @@ import logging
 import logging.config
 import asyncio
 import os
+import time
 
 logging.config.fileConfig('logging.conf')
 logging.getLogger().setLevel(logging.INFO)
@@ -9,16 +10,9 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("imdbpy").setLevel(logging.ERROR)
 logging.getLogger("cinemagoer").setLevel(logging.ERROR)
 
-# Use uvloop for faster asyncio on Linux (Railway)
-try:
-    import uvloop
-    uvloop.install()
-    logging.info("uvloop installed as asyncio event loop.")
-except ImportError:
-    pass
-
 from pyrogram import Client, __version__
 from pyrogram.raw.all import layer
+from pyrogram.sync import idle
 from database.ia_filterdb import Media
 from database.users_chats_db import db
 from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_STR
@@ -26,9 +20,12 @@ from utils import temp
 from typing import Union, Optional, AsyncGenerator
 from pyrogram import types
 
+logger = logging.getLogger(__name__)
+
+# ── Health-check server (starts once, survives reconnects) ────────────────────
 
 async def _health_server():
-    """Tiny HTTP server that binds to $PORT for Railway health checks."""
+    """Tiny HTTP server on $PORT for Railway / cloud health checks."""
     from aiohttp import web
     port = int(os.environ.get("PORT", 8080))
 
@@ -42,8 +39,10 @@ async def _health_server():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-    logging.info(f"Health check server running on port {port}.")
+    logger.info(f"Health check server running on port {port}.")
 
+
+# ── Bot client ────────────────────────────────────────────────────────────────
 
 class Bot(Client):
 
@@ -59,34 +58,34 @@ class Bot(Client):
         )
 
     async def start(self):
-        # Start health check server for Railway / cloud platforms
-        asyncio.create_task(_health_server())
         try:
             b_users, b_chats = await db.get_banned()
             temp.BANNED_USERS = b_users
             temp.BANNED_CHATS = b_chats
         except Exception as e:
-            logging.warning(f"MongoDB not reachable, running with in-memory DB: {e}")
+            logger.warning(f"MongoDB not reachable, running with in-memory DB: {e}")
             temp.BANNED_USERS = []
             temp.BANNED_CHATS = []
         await super().start()
         try:
             await Media.ensure_indexes()
         except Exception as e:
-            logging.warning(f"MongoDB index creation skipped: {e}")
+            logger.warning(f"MongoDB index creation skipped: {e}")
         me = await self.get_me()
         temp.ME = me.id
         temp.U_NAME = me.username
         temp.B_NAME = me.first_name
+        temp.BOT_START_TIME = time.time()
         self.username = '@' + me.username
-        logging.info(
-            f"{me.first_name} with Pyrogram v{__version__} (Layer {layer}) started on {me.username}."
+        logger.info(
+            f"{me.first_name} with Pyrogram v{__version__} (Layer {layer}) "
+            f"started on {me.username}."
         )
-        logging.info(LOG_STR)
+        logger.info(LOG_STR)
 
     async def stop(self, *args):
         await super().stop()
-        logging.info("Bot stopped. Bye.")
+        logger.info("Bot stopped.")
 
     async def iter_messages(
         self,
@@ -94,17 +93,71 @@ class Bot(Client):
         limit: int,
         offset: int = 0,
     ) -> Optional[AsyncGenerator["types.Message", None]]:
-        """Iterate through a chat sequentially."""
+        """Iterate through a chat's history sequentially."""
         current = offset
         while True:
             new_diff = min(200, limit - current)
             if new_diff <= 0:
                 return
-            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1)))
+            messages = await self.get_messages(
+                chat_id, list(range(current, current + new_diff + 1))
+            )
             for message in messages:
                 yield message
                 current += 1
 
 
-app = Bot()
-app.run()
+# ── Auto-reconnect supervisor loop ───────────────────────────────────────────
+
+_INITIAL_DELAY = 5     # seconds before first retry
+_MAX_DELAY     = 120   # cap at 2 minutes
+_STOP_SIGNALS  = (KeyboardInterrupt, SystemExit)
+
+
+async def main():
+    app = Bot()
+
+    # Health server starts once and stays up across all reconnects
+    loop = asyncio.get_event_loop()
+    loop.create_task(_health_server())
+
+    delay = _INITIAL_DELAY
+    attempt = 0
+
+    while True:
+        try:
+            attempt += 1
+            if attempt > 1:
+                logger.info(f"Reconnect attempt #{attempt} ...")
+            await app.start()
+            delay = _INITIAL_DELAY      # reset backoff on successful connect
+            attempt = 0
+            await idle()                # blocks until Ctrl-C or SIGTERM
+
+        except (*_STOP_SIGNALS,):
+            logger.info("Shutdown signal received — stopping bot.")
+            break
+
+        except asyncio.CancelledError:
+            logger.info("Event loop cancelled — stopping bot.")
+            break
+
+        except Exception as exc:
+            logger.warning(
+                f"Bot disconnected ({exc.__class__.__name__}: {exc}). "
+                f"Reconnecting in {delay}s ..."
+            )
+
+        finally:
+            try:
+                await app.stop()
+            except Exception:
+                pass
+
+        # Exponential backoff before next attempt
+        await asyncio.sleep(delay)
+        delay = min(delay * 2, _MAX_DELAY)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

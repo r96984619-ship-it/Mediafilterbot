@@ -83,6 +83,7 @@ class temp(object):
     DAILY_VERIFY = {}     # user_id -> {date: 'YYYY-MM-DD', count: N}
     PREMIUM_USERS = set() # user_ids with premium (bypass verify)
     MOST_SEARCHED = {}    # movie_name -> count
+    BOT_START_TIME = time.time()  # set at import; overwritten in Bot.start()
 
 
 # ── Greeting / Verify helpers ─────────────────────────────────────────────────
@@ -334,7 +335,7 @@ async def broadcast_messages(user_id, message):
         await message.copy(chat_id=user_id)
         return True, "Success"
     except FloodWait as e:
-        await asyncio.sleep(e.x)
+        await asyncio.sleep(e.value)
         return await broadcast_messages(user_id, message)
     except InputUserDeactivated:
         await db.delete_user(int(user_id))
