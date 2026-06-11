@@ -30,7 +30,7 @@ if not USE_MONGO:
             'reply': str(reply_text),
             'btn': str(btn),
             'file': str(file),
-            'alert': str(alert),
+            'alert': alert,        # keep None as None; don't stringify
         }
 
     async def find_filter(group_id, name):
@@ -80,7 +80,7 @@ else:
             'reply': str(reply_text),
             'btn': str(btn),
             'file': str(file),
-            'alert': str(alert)
+            'alert': alert,        # keep None as None; don't stringify
         }
         try:
             mycol.update_one({'text': str(text)}, {"$set": data}, upsert=True)
