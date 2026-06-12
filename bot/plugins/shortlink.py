@@ -7,10 +7,27 @@ from utils import get_shortlink, temp
 
 logger = logging.getLogger(__name__)
 
+
+async def _admin_check(message) -> bool:
+    """Return True if sender is admin; reply with denial and return False if not."""
+    uid = message.from_user.id if message.from_user else None
+    if uid not in ADMINS:
+        logger.warning(f"Non-admin {uid} tried command: {message.text[:40]!r}")
+        await message.reply(
+            "⛔️ **Admin only command.**\n\n"
+            f"Your ID `{uid}` is not in the admin list.\n"
+            "Ask the bot owner to add you.",
+            parse_mode="markdown"
+        )
+        return False
+    return True
+
+
 # ── Admin commands ────────────────────────────────────────────────────────────
 
-@Client.on_message(filters.command('shortlink') & filters.user(ADMINS))
+@Client.on_message(filters.command('shortlink'))
 async def set_shortlink(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 2)
     if len(parts) < 3:
         return await message.reply(
@@ -38,8 +55,9 @@ async def set_shortlink(bot, message):
     )
 
 
-@Client.on_message(filters.command('shortlink2') & filters.user(ADMINS))
+@Client.on_message(filters.command('shortlink2'))
 async def set_shortlink2(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 2)
     if len(parts) < 3:
         return await message.reply("**Usage:** `/shortlink2 <site_url> <api_key>`", parse_mode="markdown")
@@ -54,8 +72,9 @@ async def set_shortlink2(bot, message):
     await message.reply(f"✅ **Shortlink 2 set!** Site: `{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('shortlink3') & filters.user(ADMINS))
+@Client.on_message(filters.command('shortlink3'))
 async def set_shortlink3(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 2)
     if len(parts) < 3:
         return await message.reply("**Usage:** `/shortlink3 <site_url> <api_key>`", parse_mode="markdown")
@@ -70,8 +89,9 @@ async def set_shortlink3(bot, message):
     await message.reply(f"✅ **Shortlink 3 set!** Site: `{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('tutorial') & filters.user(ADMINS))
+@Client.on_message(filters.command('tutorial'))
 async def set_tutorial(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/tutorial <video_url>`\n\nThis video is shown to users explaining how to bypass the shortlink.", parse_mode="markdown")
@@ -82,8 +102,9 @@ async def set_tutorial(bot, message):
     await message.reply(f"✅ **Tutorial video set!**\n`{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('tutorial2') & filters.user(ADMINS))
+@Client.on_message(filters.command('tutorial2'))
 async def set_tutorial2(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/tutorial2 <video_url>`", parse_mode="markdown")
@@ -94,8 +115,9 @@ async def set_tutorial2(bot, message):
     await message.reply(f"✅ **Tutorial 2 set!**\n`{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('tutorial3') & filters.user(ADMINS))
+@Client.on_message(filters.command('tutorial3'))
 async def set_tutorial3(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/tutorial3 <video_url>`", parse_mode="markdown")
@@ -106,8 +128,9 @@ async def set_tutorial3(bot, message):
     await message.reply(f"✅ **Tutorial 3 set!**\n`{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('set_log') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_log'))
 async def set_log_channel(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/set_log <channel_id>`", parse_mode="markdown")
@@ -121,8 +144,9 @@ async def set_log_channel(bot, message):
         await message.reply("❌ Channel ID must be a number like `-1001234567890`")
 
 
-@Client.on_message(filters.command('set_caption') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_caption'))
 async def set_caption(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply(
@@ -141,8 +165,9 @@ async def set_caption(bot, message):
     await message.reply(f"✅ **Custom caption set!**\n\n`{caption}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('set_template') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_template'))
 async def set_imdb_template(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply(
@@ -165,9 +190,10 @@ async def _parse_channel(ch_str: str):
     return ch.lstrip('@')
 
 
-@Client.on_message(filters.command('fsu') & filters.user(ADMINS))
+@Client.on_message(filters.command('fsu'))
 async def set_force_sub(bot, message):
     """Set FSub channel 1 (/fsu), 2 (/fsu2), 3 (/fsu3)."""
+    if not await _admin_check(message): return
     cmd = message.command[0]          # fsu / fsu2 / fsu3
     slot = cmd.replace('fsu', '') or '1'   # '1', '2', or '3'
     parts = message.text.strip().split(None, 1)
@@ -205,14 +231,15 @@ async def set_force_sub(bot, message):
         await message.reply(f"❌ Error: `{e}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command(['fsu2', 'fsu3']) & filters.user(ADMINS))
+@Client.on_message(filters.command(['fsu2', 'fsu3']))
 async def set_force_sub_extra(bot, message):
     await set_force_sub(bot, message)
 
 
-@Client.on_message(filters.command('del_fsub') & filters.user(ADMINS))
+@Client.on_message(filters.command('del_fsub'))
 async def remove_force_sub(bot, message):
     """Remove FSub channel 1 (/del_fsub), 2 (/del_fsub2), 3 (/del_fsub3)."""
+    if not await _admin_check(message): return
     cmd = message.command[0]
     slot = cmd.replace('del_fsub', '') or '1'
     import os, info as _info
@@ -228,13 +255,14 @@ async def remove_force_sub(bot, message):
     await message.reply(f"✅ **Force Sub #{slot} removed!**", parse_mode="markdown")
 
 
-@Client.on_message(filters.command(['del_fsub2', 'del_fsub3']) & filters.user(ADMINS))
+@Client.on_message(filters.command(['del_fsub2', 'del_fsub3']))
 async def remove_force_sub_extra(bot, message):
     await remove_force_sub(bot, message)
 
 
-@Client.on_message(filters.command('show_fsub') & filters.user(ADMINS))
+@Client.on_message(filters.command('show_fsub'))
 async def show_force_sub(bot, message):
+    if not await _admin_check(message): return
     import info as _info
     channels = [
         ('1', _info.AUTH_CHANNEL),
@@ -255,8 +283,9 @@ async def show_force_sub(bot, message):
     await message.reply("\n".join(lines), parse_mode="markdown", disable_web_page_preview=True)
 
 
-@Client.on_message(filters.command('ginfo') & filters.user(ADMINS))
+@Client.on_message(filters.command('ginfo'))
 async def group_info(bot, message):
+    if not await _admin_check(message): return
     if message.chat.type in ['private']:
         return await message.reply("Use this command in a group.")
     chat = message.chat
@@ -274,8 +303,9 @@ async def group_info(bot, message):
     await message.reply(text, parse_mode="markdown")
 
 
-@Client.on_message(filters.command('premium') & filters.user(ADMINS))
+@Client.on_message(filters.command('premium'))
 async def grant_premium(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/premium <user_id>`", parse_mode="markdown")
@@ -288,8 +318,9 @@ async def grant_premium(bot, message):
         await message.reply("❌ User ID must be a number.")
 
 
-@Client.on_message(filters.command('unpremium') & filters.user(ADMINS))
+@Client.on_message(filters.command('unpremium'))
 async def remove_premium(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/unpremium <user_id>`", parse_mode="markdown")
@@ -302,8 +333,9 @@ async def remove_premium(bot, message):
         await message.reply("❌ User ID must be a number.")
 
 
-@Client.on_message(filters.command('set_sub_link') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_sub_link'))
 async def set_sub_link(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/set_sub_link <url>`\n\nUsers see this as the 'Buy Subscription' button.", parse_mode="markdown")
@@ -314,8 +346,9 @@ async def set_sub_link(bot, message):
     await message.reply(f"✅ **Subscription link set!**\n`{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('set_movie_group') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_movie_group'))
 async def set_movie_group(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply("**Usage:** `/set_movie_group <url or @username>`\n\nThis is the group shown when users text the bot in PM.", parse_mode="markdown")
@@ -328,8 +361,9 @@ async def set_movie_group(bot, message):
     await message.reply(f"✅ **Movie group set!**\n`{url}`", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('set_daily_verify') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_daily_verify'))
 async def set_daily_verify(bot, message):
+    if not await _admin_check(message): return
     parts = message.text.strip().split(None, 1)
     if len(parts) < 2:
         return await message.reply(
@@ -350,8 +384,9 @@ async def set_daily_verify(bot, message):
         await message.reply("❌ Must be a number, e.g. `/set_daily_verify 3`")
 
 
-@Client.on_message(filters.command('list_premium') & filters.user(ADMINS))
+@Client.on_message(filters.command('list_premium'))
 async def list_premium(bot, message):
+    if not await _admin_check(message): return
     from utils import temp
     if not temp.PREMIUM_USERS:
         return await message.reply("No premium users at the moment.")
@@ -359,8 +394,9 @@ async def list_premium(bot, message):
     await message.reply(f"⭐️ **Premium Users:**\n\n{ids}", parse_mode="markdown")
 
 
-@Client.on_message(filters.command('shortlink_status') & filters.user(ADMINS))
+@Client.on_message(filters.command('shortlink_status'))
 async def shortlink_status(bot, message):
+    if not await _admin_check(message): return
     import info as _info
     lines = ["**🔗 Shortlink Status**\n"]
     if _info.SHORTLINK_URL and _info.SHORTLINK_API:
@@ -379,8 +415,9 @@ async def shortlink_status(bot, message):
     await message.reply('\n'.join(lines), parse_mode="markdown")
 
 
-@Client.on_message(filters.command('shortlink_stats') & filters.user(ADMINS))
+@Client.on_message(filters.command('shortlink_stats'))
 async def shortlink_stats(bot, message):
+    if not await _admin_check(message): return
     from utils import get_verify_stats
     import info as _info
     s = get_verify_stats()

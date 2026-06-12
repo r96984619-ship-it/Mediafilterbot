@@ -57,8 +57,10 @@ async def refer_cmd(bot, message):
     await message.reply(text, reply_markup=btn, parse_mode="html", disable_web_page_preview=True)
 
 
-@Client.on_message(filters.command('refer_stats') & filters.user(ADMINS))
+@Client.on_message(filters.command('refer_stats'))
 async def refer_stats_cmd(bot, message):
+    from plugins.shortlink import _admin_check
+    if not await _admin_check(message): return
     import info as _info
     board = get_refer_leaderboard(15)
     total_referrals = sum(temp.REFERRAL_COUNTS.values())
@@ -88,8 +90,10 @@ async def refer_stats_cmd(bot, message):
     await message.reply(text, parse_mode="html")
 
 
-@Client.on_message(filters.command('set_refer_threshold') & filters.user(ADMINS))
+@Client.on_message(filters.command('set_refer_threshold'))
 async def set_refer_threshold_cmd(bot, message):
+    from plugins.shortlink import _admin_check
+    if not await _admin_check(message): return
     import info as _info
     parts = message.text.strip().split()
     if len(parts) < 2 or not parts[1].isdigit():
