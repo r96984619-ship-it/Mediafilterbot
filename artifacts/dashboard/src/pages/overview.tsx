@@ -1,7 +1,10 @@
+import { useState, useEffect, useRef } from "react";
 import { useGetStatsOverview, useGetFilesByType, getGetStatsOverviewQueryKey, getGetFilesByTypeQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileVideo, MessageSquare, Ban } from "lucide-react";
+import { Users, FileVideo, MessageSquare, Ban, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
+
+const REFRESH_INTERVAL = 60_000;
 
 const TYPE_COLORS: Record<string, string> = {
   Video: "hsl(var(--primary))",
@@ -10,19 +13,71 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function Overview() {
-  const { data: stats, isLoading: statsLoading } = useGetStatsOverview({
-    query: { queryKey: getGetStatsOverviewQueryKey() },
-  });
-  const { data: fileStats, isLoading: fileStatsLoading } = useGetFilesByType({
-    query: { queryKey: getGetFilesByTypeQueryKey() },
+  const [secondsLeft, setSecondsLeft] = useState(REFRESH_INTERVAL / 1000);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const { data: stats, isLoading: statsLoading, dataUpdatedAt: statsUpdatedAt } = useGetStatsOverview({
+    query: {
+      queryKey: getGetStatsOverviewQueryKey(),
+      refetchInterval: REFRESH_INTERVAL,
+    },
   });
 
+  const { data: fileStats, isLoading: fileStatsLoading } = useGetFilesByType({
+    query: {
+      queryKey: getGetFilesByTypeQueryKey(),
+      refetchInterval: REFRESH_INTERVAL,
+    },
+  });
+
+  useEffect(() => {
+    if (statsUpdatedAt) setLastUpdated(new Date(statsUpdatedAt));
+  }, [statsUpdatedAt]);
+
+  useEffect(() => {
+    setSecondsLeft(REFRESH_INTERVAL / 1000);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft(s => {
+        if (s <= 1) return REFRESH_INTERVAL / 1000;
+        return s - 1;
+      });
+    }, 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [statsUpdatedAt]);
+
   const hasFileData = fileStats && fileStats.length > 0;
+  const progress = ((REFRESH_INTERVAL / 1000 - secondsLeft) / (REFRESH_INTERVAL / 1000)) * 100;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Mission Control</h1>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+            </span>
+            Live
+          </span>
+          <div className="flex items-center gap-1.5">
+            <RefreshCw className="w-3 h-3" />
+            <div className="relative w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 h-full bg-primary/60 rounded-full transition-all duration-1000"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="tabular-nums w-5 text-right">{secondsLeft}s</span>
+          </div>
+          {lastUpdated && (
+            <span className="hidden sm:inline">
+              Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -73,10 +128,7 @@ export default function Overview() {
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {fileStats.map((entry) => (
-                    <Cell
-                      key={entry.type}
-                      fill={TYPE_COLORS[entry.type] ?? "hsl(var(--primary))"}
-                    />
+                    <Cell key={entry.type} fill={TYPE_COLORS[entry.type] ?? "hsl(var(--primary))"} />
                   ))}
                 </Bar>
               </BarChart>
