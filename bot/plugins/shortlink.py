@@ -377,3 +377,54 @@ async def shortlink_status(bot, message):
         lines.append("❌ Shortlink 3: Not set")
     lines.append(f"\n⏱ Verify Expire: **{_info.VERIFY_EXPIRE // 3600}h**")
     await message.reply('\n'.join(lines), parse_mode="markdown")
+
+
+@Client.on_message(filters.command('shortlink_stats') & filters.user(ADMINS))
+async def shortlink_stats(bot, message):
+    from utils import get_verify_stats
+    import info as _info
+    s = get_verify_stats()
+
+    # Active providers count
+    active = sum([
+        1 for url, api in [
+            (_info.SHORTLINK_URL, _info.SHORTLINK_API),
+            (_info.SHORTLINK_URL2, _info.SHORTLINK_API2),
+            (_info.SHORTLINK_URL3, _info.SHORTLINK_API3),
+        ] if url and api
+    ])
+
+    # Trend arrow vs yesterday
+    today = s['today']
+    yesterday = s['yesterday']
+    if yesterday == 0:
+        trend = "🆕 first data"
+    elif today > yesterday:
+        pct = round((today - yesterday) / yesterday * 100)
+        trend = f"📈 +{pct}% vs yesterday ({yesterday})"
+    elif today < yesterday:
+        pct = round((yesterday - today) / yesterday * 100)
+        trend = f"📉 -{pct}% vs yesterday ({yesterday})"
+    else:
+        trend = f"➡️ same as yesterday ({yesterday})"
+
+    # Users currently verified today
+    from datetime import date
+    today_str = str(date.today())
+    verified_today = sum(
+        1 for v in temp.DAILY_VERIFY.values()
+        if v.get('date') == today_str and v.get('count', 0) >= _info.VERIFY_DAILY_LIMIT
+    )
+
+    text = (
+        f"**📊 Shortlink Stats — {s['date']}**\n\n"
+        f"🔗 Active providers: **{active}/3**\n"
+        f"⚙️ Daily verify limit: **{_info.VERIFY_DAILY_LIMIT}x/day**\n\n"
+        f"**Verifications:**\n"
+        f"• Today: **{today}** {trend}\n"
+        f"• This week ({s['week_key']}): **{s['this_week']}**\n"
+        f"• All-time total: **{s['total']}**\n\n"
+        f"👥 Users fully verified today: **{verified_today}**\n\n"
+        f"_Note: counts reset on bot restart (in-memory)._"
+    )
+    await message.reply(text, parse_mode="markdown")

@@ -120,6 +120,7 @@ Earn money every time a user gets a file — they click your shortlink first, yo
 • <code>/shortlink2 &lt;site&gt; &lt;api_key&gt;</code> — Set provider 2
 • <code>/shortlink3 &lt;site&gt; &lt;api_key&gt;</code> — Set provider 3
 • <code>/shortlink_status</code> — See which providers are active
+• <code>/shortlink_stats</code> — Today / this week / all-time verification counts
 
 <b>Control how often users verify:</b>
 • <code>/set_daily_verify &lt;number&gt;</code> — How many times/day a user must click

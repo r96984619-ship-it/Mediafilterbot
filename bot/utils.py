@@ -84,6 +84,11 @@ class temp(object):
     PREMIUM_USERS = set() # user_ids with premium (bypass verify)
     MOST_SEARCHED = {}    # movie_name -> count (all-time)
     WEEKLY_SEARCHES = {} # week_key -> {movie_name -> count}
+    VERIFY_STATS = {
+        'daily': {},   # 'YYYY-MM-DD' -> count
+        'weekly': {},  # 'YYYY-Www'   -> count
+        'total': 0,
+    }
     BOT_START_TIME = time.time()  # set at import; overwritten in Bot.start()
 
 
@@ -115,14 +120,48 @@ def get_daily_verify_info(user_id: int) -> dict:
 
 
 def mark_verified(user_id: int):
-    """Increment user's daily verify count."""
-    from datetime import date
+    """Increment user's daily verify count and global stats."""
+    from datetime import date, datetime
     today = str(date.today())
     entry = temp.DAILY_VERIFY.get(user_id)
     if not entry or entry.get('date') != today:
         entry = {'date': today, 'count': 0}
     entry['count'] += 1
     temp.DAILY_VERIFY[user_id] = entry
+    # ── Global stats ──────────────────────────────────────────────────────────
+    iso = datetime.utcnow().isocalendar()
+    week_key = f"{iso[0]}-W{iso[1]:02d}"
+    temp.VERIFY_STATS['daily'][today] = temp.VERIFY_STATS['daily'].get(today, 0) + 1
+    temp.VERIFY_STATS['weekly'][week_key] = temp.VERIFY_STATS['weekly'].get(week_key, 0) + 1
+    temp.VERIFY_STATS['total'] += 1
+    # Keep only last 8 weeks of daily data to cap memory usage
+    all_days = sorted(temp.VERIFY_STATS['daily'].keys())
+    if len(all_days) > 56:
+        for old_day in all_days[:-56]:
+            del temp.VERIFY_STATS['daily'][old_day]
+
+
+def get_verify_stats() -> dict:
+    """Return a snapshot of verification stats for /shortlink_stats."""
+    from datetime import date, datetime
+    today = str(date.today())
+    iso = datetime.utcnow().isocalendar()
+    week_key = f"{iso[0]}-W{iso[1]:02d}"
+    today_count = temp.VERIFY_STATS['daily'].get(today, 0)
+    week_count = temp.VERIFY_STATS['weekly'].get(week_key, 0)
+    total = temp.VERIFY_STATS['total']
+    # Yesterday for comparison
+    from datetime import timedelta
+    yesterday = str(date.today() - timedelta(days=1))
+    yesterday_count = temp.VERIFY_STATS['daily'].get(yesterday, 0)
+    return {
+        'today': today_count,
+        'yesterday': yesterday_count,
+        'this_week': week_count,
+        'total': total,
+        'week_key': week_key,
+        'date': today,
+    }
 
 
 def is_premium(user_id: int) -> bool:
