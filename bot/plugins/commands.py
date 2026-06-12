@@ -15,7 +15,8 @@ from info import (CHANNELS, ADMINS, AUTH_CHANNEL, LOG_CHANNEL, PICS,
 from utils import (get_settings, get_size, is_subscribed, save_group_settings, temp,
                    clean_caption, get_shortlink, make_verify_token,
                    get_time_greeting, get_daily_verify_info, mark_verified,
-                   is_premium, track_search, get_most_searched, check_fsub)
+                   is_premium, track_search, get_most_searched,
+                   get_weekly_trending, _current_week_key, check_fsub)
 from database.connections_mdb import active_connection
 import re
 import json
@@ -503,22 +504,50 @@ async def most_search_callback(client, query):
 # ── Top Trending callback ──────────────────────────────────────────────────────
 @Client.on_callback_query(filters.regex('^top_trending$'))
 async def top_trending_callback(client, query):
-    await query.answer("Fetching trending movies from IMDb...", show_alert=False)
-    from utils import get_poster
-    trending_titles = [
-        "Mission Impossible", "Avengers Endgame", "Top Gun Maverick",
-        "Interstellar", "The Dark Knight", "Inception", "Parasite",
-        "John Wick", "Oppenheimer", "Dune"
-    ]
-    text = "<b>⚡ Top Trending Movies</b>\n\n"
-    for i, title in enumerate(trending_titles, 1):
-        text += f"{i}. <b>{title}</b>\n"
-    text += "\n<i>Search any of these in your movie group!</i>"
+    await query.answer()
+    top = get_weekly_trending(10)
+    week = _current_week_key()
     btn = [[InlineKeyboardButton("🔙 Back", callback_data="start_home")]]
+    if not top:
+        text = (
+            f"<b>⚡ Top Trending This Week</b> (<code>{week}</code>)\n\n"
+            "<i>No searches recorded yet this week.\n"
+            "Search movies in your group to see them here!</i>"
+        )
+    else:
+        medals = ["🥇", "🥈", "🥉"]
+        text = f"<b>⚡ Top Trending This Week</b> (<code>{week}</code>)\n\n"
+        for i, (title, count) in enumerate(top, 1):
+            prefix = medals[i - 1] if i <= 3 else f"{i}."
+            bar = "▓" * min(count, 10)
+            text += f"{prefix} <b>{title}</b>\n   {bar} <code>{count}</code> search{'es' if count != 1 else ''}\n"
+        text += "\n<i>Updated in real-time as users search.</i>"
     try:
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
     except Exception:
         await query.message.reply(text, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+
+
+# ── /trending command ──────────────────────────────────────────────────────────
+@Client.on_message(filters.command("trending") & filters.incoming)
+async def trending_cmd(client, message):
+    top = get_weekly_trending(10)
+    week = _current_week_key()
+    if not top:
+        text = (
+            f"<b>⚡ Top Trending This Week</b> (<code>{week}</code>)\n\n"
+            "<i>No searches recorded yet this week.\n"
+            "Search movies in your group to start tracking!</i>"
+        )
+    else:
+        medals = ["🥇", "🥈", "🥉"]
+        text = f"<b>⚡ Top Trending This Week</b> (<code>{week}</code>)\n\n"
+        for i, (title, count) in enumerate(top, 1):
+            prefix = medals[i - 1] if i <= 3 else f"{i}."
+            bar = "▓" * min(count, 10)
+            text += f"{prefix} <b>{title}</b>\n   {bar} <code>{count}</code> search{'es' if count != 1 else ''}\n"
+        text += "\n<i>Updated in real-time as users search.</i>"
+    await message.reply(text, parse_mode=enums.ParseMode.HTML)
 
 
 # ── Premium info callback ──────────────────────────────────────────────────────

@@ -82,7 +82,8 @@ class temp(object):
     VERIFY_TOKENS = {}    # token -> {file_id, pre, expires_at, user_id}
     DAILY_VERIFY = {}     # user_id -> {date: 'YYYY-MM-DD', count: N}
     PREMIUM_USERS = set() # user_ids with premium (bypass verify)
-    MOST_SEARCHED = {}    # movie_name -> count
+    MOST_SEARCHED = {}    # movie_name -> count (all-time)
+    WEEKLY_SEARCHES = {} # week_key -> {movie_name -> count}
     BOT_START_TIME = time.time()  # set at import; overwritten in Bot.start()
 
 
@@ -137,6 +138,39 @@ def track_search(query: str):
 def get_most_searched(top_n: int = 10) -> list:
     """Return list of (title, count) sorted by count desc."""
     return sorted(temp.MOST_SEARCHED.items(), key=lambda x: x[1], reverse=True)[:top_n]
+
+
+def _current_week_key() -> str:
+    """Return ISO week key like '2026-W24'."""
+    from datetime import datetime
+    d = datetime.utcnow().isocalendar()
+    return f"{d[0]}-W{d[1]:02d}"
+
+
+def track_weekly_search(query: str):
+    """Increment weekly search counter for a query."""
+    week = _current_week_key()
+    key = query.strip().lower().title()
+    if week not in temp.WEEKLY_SEARCHES:
+        temp.WEEKLY_SEARCHES[week] = {}
+    temp.WEEKLY_SEARCHES[week][key] = temp.WEEKLY_SEARCHES[week].get(key, 0) + 1
+    # Keep only the last 2 weeks to avoid unbounded memory growth
+    for old_week in [k for k in temp.WEEKLY_SEARCHES if k != week and k != _prev_week_key()]:
+        del temp.WEEKLY_SEARCHES[old_week]
+
+
+def _prev_week_key() -> str:
+    """Return ISO week key for last week."""
+    from datetime import datetime, timedelta
+    d = (datetime.utcnow() - timedelta(weeks=1)).isocalendar()
+    return f"{d[0]}-W{d[1]:02d}"
+
+
+def get_weekly_trending(top_n: int = 10) -> list:
+    """Return list of (title, count) for the current week, sorted by count desc."""
+    week = _current_week_key()
+    week_data = temp.WEEKLY_SEARCHES.get(week, {})
+    return sorted(week_data.items(), key=lambda x: x[1], reverse=True)[:top_n]
 
 
 # ── IMDb helpers ──────────────────────────────────────────────────────────────

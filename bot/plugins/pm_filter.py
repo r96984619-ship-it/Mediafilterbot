@@ -21,8 +21,8 @@ from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerId
 from utils import (get_size, is_subscribed, get_poster, search_gagala, temp,
                    get_settings, save_group_settings, clean_caption,
                    get_shortlink, make_verify_token, get_daily_verify_info,
-                   is_premium, track_search, get_most_searched, get_time_greeting,
-                   check_fsub)
+                   is_premium, track_search, track_weekly_search,
+                   get_most_searched, get_time_greeting, check_fsub)
 import time
 from database.users_chats_db import db
 from database.ia_filterdb import Media, get_file_details, get_search_results
@@ -705,6 +705,7 @@ async def auto_filter(client, msg, spoll=None):
         files, offset, total_results = await get_search_results(search, offset=0, filter=True)
         if files:
             track_search(search)
+            track_weekly_search(search)
         if not files:
             if settings.get('spell_check') and SPELL_CHECK_REPLY:
                 return await advantage_spell_chok(msg)
