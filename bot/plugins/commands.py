@@ -73,7 +73,10 @@ def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
         ])
         if movie_group:
             rows.append([InlineKeyboardButton('○ JOIN MOVIE GROUP ○', url=movie_group)])
-        rows.append([InlineKeyboardButton('○ JOIN UPDATES CHANNEL ○', url='https://t.me/BackupChannel5211')])
+        rows.append([
+            InlineKeyboardButton('📢 Updates', url='https://t.me/BackupChannel5211'),
+            InlineKeyboardButton('📢 Backup', url='https://t.me/backupchannek'),
+        ])
         rows.append([
             InlineKeyboardButton('• PREMIUM •', callback_data='premium_info'),
             InlineKeyboardButton('• ABOUT •', callback_data='about'),
@@ -87,9 +90,10 @@ def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton('📢 Updates', url='https://t.me/BackupChannel5211'),
             ],
             [
+                InlineKeyboardButton('📢 Backup', url='https://t.me/backupchannek'),
                 InlineKeyboardButton('❓ Help', callback_data='help'),
-                InlineKeyboardButton('ℹ️ About', callback_data='about'),
             ],
+            [InlineKeyboardButton('ℹ️ About', callback_data='about')],
         ]
         return InlineKeyboardMarkup(rows)
 
@@ -128,7 +132,10 @@ def _build_start_caption(user_id: int, name: str) -> str:
 async def start(client, message):
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         buttons = [
-            [InlineKeyboardButton('📢 Updates', url='https://t.me/BackupChannel5211')],
+            [
+                InlineKeyboardButton('📢 Updates', url='https://t.me/BackupChannel5211'),
+                InlineKeyboardButton('📢 Backup', url='https://t.me/backupchannek'),
+            ],
             [InlineKeyboardButton('❓ Help', url=f"https://t.me/{temp.U_NAME}?start=help")],
         ]
         await message.reply(
@@ -427,7 +434,10 @@ async def pm_text_redirect(client, message):
     btn = []
     if movie_group:
         btn.append([InlineKeyboardButton('🔍 MOVIE GROUP 🔍', url=movie_group)])
-    btn.append([InlineKeyboardButton('🤖 Updates', url='https://t.me/BackupChannel5211')])
+    btn.append([
+        InlineKeyboardButton('🤖 Updates', url='https://t.me/BackupChannel5211'),
+        InlineKeyboardButton('📢 Backup', url='https://t.me/backupchannek'),
+    ])
     await message.reply(
         script.PM_REDIRECT.format(name=name),
         reply_markup=InlineKeyboardMarkup(btn),
@@ -577,7 +587,10 @@ def _help_user_chat_buttons():
 
 def _help_user_buttons(uname):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🤖 Updates", url="https://t.me/BackupChannel5211")],
+        [
+            InlineKeyboardButton("🤖 Updates", url="https://t.me/BackupChannel5211"),
+            InlineKeyboardButton("📢 Backup", url="https://t.me/backupchannek"),
+        ],
         [InlineKeyboardButton("🔙 Back", callback_data="start_home")],
     ])
 
