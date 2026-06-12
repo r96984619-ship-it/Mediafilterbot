@@ -8,7 +8,21 @@ USE_MONGO = bool(DATABASE_URI)
 if USE_MONGO:
     try:
         import motor.motor_asyncio
-    except ImportError:
+        import certifi
+        import pymongo
+        # Sync ping to verify the connection is actually reachable before
+        # committing to the async Motor client (Motor is lazy and only
+        # raises on the first real query, which would crash every handler).
+        _test = pymongo.MongoClient(
+            DATABASE_URI,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=10000,
+        )
+        _test.admin.command('ping')
+        _test.close()
+        del _test
+    except Exception as e:
+        logger.warning(f"MongoDB not reachable, using in-memory users/chats DB: {e}")
         USE_MONGO = False
 
 if USE_MONGO:
