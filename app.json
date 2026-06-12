@@ -1,0 +1,104 @@
+{
+  "name": "Miviesfather Telegram Bot",
+  "description": "A full-featured Telegram movie-filter bot with IMDb lookup, force-subscribe, shortlink monetization, and MongoDB indexing.",
+  "repository": "https://github.com/r96984619-ship-it/Mediafilterbot",
+  "logo": "https://i.imgur.com/YBBlT1N.png",
+  "keywords": ["telegram", "bot", "python", "mongodb", "movies"],
+  "stack": "heroku-22",
+  "buildpacks": [
+    { "url": "heroku/python" }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "env": {
+    "API_ID": {
+      "description": "Telegram API ID from https://my.telegram.org",
+      "required": true
+    },
+    "API_HASH": {
+      "description": "Telegram API Hash from https://my.telegram.org",
+      "required": true
+    },
+    "BOT_TOKEN": {
+      "description": "Bot token from @BotFather on Telegram",
+      "required": true
+    },
+    "DATABASE_URI": {
+      "description": "MongoDB Atlas connection URI (without this, data resets on restart)",
+      "required": false
+    },
+    "DATABASE_NAME": {
+      "description": "MongoDB database name",
+      "value": "Rajappan",
+      "required": false
+    },
+    "ADMINS": {
+      "description": "Space-separated Telegram user IDs with admin access",
+      "required": false
+    },
+    "CHANNELS": {
+      "description": "Space-separated channel IDs to auto-index (e.g. -1001234567890)",
+      "required": false
+    },
+    "LOG_CHANNEL": {
+      "description": "Channel ID for bot log messages (0 = disabled)",
+      "value": "0",
+      "required": false
+    },
+    "AUTH_CHANNEL": {
+      "description": "Force-subscribe channel ID #1",
+      "required": false
+    },
+    "FSUB_2": {
+      "description": "Force-subscribe channel ID #2",
+      "required": false
+    },
+    "FSUB_3": {
+      "description": "Force-subscribe channel ID #3",
+      "required": false
+    },
+    "SHORTLINK_URL": {
+      "description": "Shortlink API domain (e.g. api.shareus.io)",
+      "required": false
+    },
+    "SHORTLINK_API": {
+      "description": "Shortlink API key for provider 1",
+      "required": false
+    },
+    "MOVIE_GROUP": {
+      "description": "Your movie group invite link",
+      "required": false
+    },
+    "SUB_LINK": {
+      "description": "Link users can click to buy premium",
+      "required": false
+    },
+    "SUPPORT_CHAT": {
+      "description": "Support group username (without @)",
+      "value": "BackupChannel5211",
+      "required": false
+    },
+    "VERIFY_DAILY_LIMIT": {
+      "description": "Number of shortlink verifications needed per day",
+      "value": "1",
+      "required": false
+    },
+    "IMDB": {
+      "description": "Show IMDb info in results (True/False)",
+      "value": "True",
+      "required": false
+    },
+    "PROTECT_CONTENT": {
+      "description": "Prevent forwarding of sent files (True/False)",
+      "value": "False",
+      "required": false
+    }
+  },
+  "scripts": {
+    "postdeploy": "echo 'Bot deployed! Check worker logs with: heroku logs --tail'"
+  }
+}

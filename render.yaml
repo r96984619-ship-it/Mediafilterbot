@@ -1,0 +1,54 @@
+services:
+  - type: worker
+    name: miviesfather-bot
+    runtime: python
+    repo: https://github.com/r96984619-ship-it/Mediafilterbot
+    buildCommand: pip install -r bot/requirements.txt
+    startCommand: python3 bot/bot.py
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URI
+        sync: false
+      - key: DATABASE_NAME
+        value: Rajappan
+      - key: ADMINS
+        sync: false
+      - key: CHANNELS
+        sync: false
+      - key: LOG_CHANNEL
+        value: "0"
+      - key: AUTH_CHANNEL
+        sync: false
+      - key: FSUB_2
+        sync: false
+      - key: FSUB_3
+        sync: false
+      - key: SHORTLINK_URL
+        sync: false
+      - key: SHORTLINK_API
+        sync: false
+      - key: MOVIE_GROUP
+        sync: false
+      - key: SUB_LINK
+        sync: false
+      - key: SUPPORT_CHAT
+        value: BackupChannel5211
+      - key: VERIFY_DAILY_LIMIT
+        value: "1"
+      - key: VERIFY_EXPIRE
+        value: "86400"
+      - key: IMDB
+        value: "True"
+      - key: PROTECT_CONTENT
+        value: "False"
+      - key: SPELL_CHECK_REPLY
+        value: "True"
+      - key: PORT
+        value: "8080"
