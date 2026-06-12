@@ -158,7 +158,8 @@ Choose a topic below to learn more 👇"""
 • /id — Get your Telegram ID
 • /info @username — Get user info
 • /imdb &lt;title&gt; — Search IMDb
-• /search &lt;title&gt; — Search movie title"""
+• /search &lt;title&gt; — Search movie title
+• /trending — Top 10 most searched movies this week"""
 
     ABOUT_TXT = """<b>⚙️ About Me</b>
 
@@ -225,7 +226,8 @@ Connect groups to your PM for managing filters without spamming.
 • /id — Get your Telegram ID
 • /info — Get detailed info about a user
 • /imdb — Search IMDb for a movie or show
-• /search — Search IMDb by title"""
+• /search — Search IMDb by title
+• /trending — Top 10 most searched movies this week"""
 
     ADMIN_TXT = """<b>🛠 Admin Commands</b>
 
