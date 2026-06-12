@@ -58,7 +58,7 @@ def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
         rows = []
         if not vinfo['verified'] and not is_premium(user_id):
             verify_cb = f"do_verify_{user_id}"
-            how_url = _info.VERIFY_TUTORIAL or "https://t.me/backupchannek"
+            how_url = _info.VERIFY_TUTORIAL or "https://t.me/BackupChannel5211"
             rows.append([
                 InlineKeyboardButton('• VERIFY •', callback_data=verify_cb),
                 InlineKeyboardButton('• HOW TO VERIFY •', url=how_url),
@@ -73,7 +73,7 @@ def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
         ])
         if movie_group:
             rows.append([InlineKeyboardButton('○ JOIN MOVIE GROUP ○', url=movie_group)])
-        rows.append([InlineKeyboardButton('○ JOIN UPDATES CHANNEL ○', url='https://t.me/backupchannek')])
+        rows.append([InlineKeyboardButton('○ JOIN UPDATES CHANNEL ○', url='https://t.me/BackupChannel5211')])
         rows.append([
             InlineKeyboardButton('• PREMIUM •', callback_data='premium_info'),
             InlineKeyboardButton('• ABOUT •', callback_data='about'),
@@ -84,7 +84,7 @@ def _build_start_buttons(user_id: int) -> InlineKeyboardMarkup:
             [InlineKeyboardButton('➕ Add Me To Your Group ➕', url=f'http://t.me/{temp.U_NAME}?startgroup=true')],
             [
                 InlineKeyboardButton('🔍 Inline Search', switch_inline_query_current_chat=''),
-                InlineKeyboardButton('📢 Updates', url='https://t.me/backupchannek'),
+                InlineKeyboardButton('📢 Updates', url='https://t.me/BackupChannel5211'),
             ],
             [
                 InlineKeyboardButton('❓ Help', callback_data='help'),
@@ -128,7 +128,7 @@ def _build_start_caption(user_id: int, name: str) -> str:
 async def start(client, message):
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
         buttons = [
-            [InlineKeyboardButton('📢 Updates', url='https://t.me/backupchannek')],
+            [InlineKeyboardButton('📢 Updates', url='https://t.me/BackupChannel5211')],
             [InlineKeyboardButton('❓ Help', url=f"https://t.me/{temp.U_NAME}?start=help")],
         ]
         await message.reply(
@@ -427,7 +427,7 @@ async def pm_text_redirect(client, message):
     btn = []
     if movie_group:
         btn.append([InlineKeyboardButton('🔍 MOVIE GROUP 🔍', url=movie_group)])
-    btn.append([InlineKeyboardButton('🤖 Updates', url='https://t.me/backupchannek')])
+    btn.append([InlineKeyboardButton('🤖 Updates', url='https://t.me/BackupChannel5211')])
     await message.reply(
         script.PM_REDIRECT.format(name=name),
         reply_markup=InlineKeyboardMarkup(btn),
@@ -458,7 +458,7 @@ async def do_verify_callback(client, query):
     }
     bot_link = f"https://t.me/{temp.U_NAME}?start=verify_{token}"
     short = await get_shortlink(bot_link, sl_url, sl_api)
-    how_url = _info.VERIFY_TUTORIAL or "https://t.me/backupchannek"
+    how_url = _info.VERIFY_TUTORIAL or "https://t.me/BackupChannel5211"
     btn = [
         [InlineKeyboardButton("🚀 VERIFY NOW", url=short)],
         [InlineKeyboardButton("📖 How To Verify", url=how_url)],
@@ -577,7 +577,7 @@ def _help_user_chat_buttons():
 
 def _help_user_buttons(uname):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🤖 Updates", url="https://t.me/backupchannek")],
+        [InlineKeyboardButton("🤖 Updates", url="https://t.me/BackupChannel5211")],
         [InlineKeyboardButton("🔙 Back", callback_data="start_home")],
     ])
 

@@ -164,7 +164,7 @@ Choose a topic below to learn more 👇"""
 
 ✦ <b>Name:</b> {bname}
 ✦ <b>Username:</b> @{uname}
-✦ <b>Creator:</b> <a href="https://t.me/backupchannek">Miviesfather</a>
+✦ <b>Creator:</b> <a href="https://t.me/BackupChannel5211">Miviesfather</a>
 ✦ <b>Library:</b> Pyrogram v2
 ✦ <b>Language:</b> Python 3.11
 ✦ <b>Database:</b> MongoDB
@@ -176,7 +176,7 @@ This bot is based on the open-source EvaMaria project.
 • Source: https://github.com/EvamariaTG/EvaMaria
 
 <b>Developers:</b>
-• <a href="https://t.me/backupchannek">Miviesfather</a>"""
+• <a href="https://t.me/BackupChannel5211">Miviesfather</a>"""
 
     MANUELFILTER_TXT = """<b>📌 Manual Filters</b>
 
@@ -196,7 +196,7 @@ Set automated replies for specific keywords in your group.
     BUTTON_TXT = """<b>🔘 Button Syntax</b>
 
 <b>URL Button:</b>
-<code>[Button Text](buttonurl:https://t.me/backupchannek)</code>
+<code>[Button Text](buttonurl:https://t.me/BackupChannel5211)</code>
 
 <b>Alert Button:</b>
 <code>[Button Text](buttonalert:Your alert message here)</code>"""

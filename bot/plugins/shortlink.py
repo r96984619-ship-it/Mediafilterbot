@@ -131,7 +131,7 @@ async def set_caption(bot, message):
             "`{file_name}` — file name\n"
             "`{file_size}` — file size\n"
             "`{file_caption}` — original caption\n\n"
-            "**Example:**\n`/set_caption 🎬 {file_name}\n📦 Size: {file_size}\n\n@backupchannek`",
+            "**Example:**\n`/set_caption 🎬 {file_name}\n📦 Size: {file_size}\n\n@BackupChannel5211`",
             parse_mode="markdown"
         )
     caption = parts[1].strip()

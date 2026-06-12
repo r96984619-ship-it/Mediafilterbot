@@ -58,12 +58,12 @@ def make_verify_token(user_id: int, file_id: str) -> str:
 
 
 def clean_caption(text: str) -> str:
-    """Replace any external @channel watermarks with @backupchannek."""
+    """Replace any external @channel watermarks with @BackupChannel5211."""
     if not text:
         return text
     return re.sub(
-        r'@(?!backupchannek(?:\b|$))([A-Za-z][A-Za-z0-9_]*)',
-        '@backupchannek',
+        r'@(?!BackupChannel5211(?:\b|$))([A-Za-z][A-Za-z0-9_]*)',
+        '@BackupChannel5211',
         text,
         flags=re.IGNORECASE
     )
