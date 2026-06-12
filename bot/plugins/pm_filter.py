@@ -159,7 +159,7 @@ async def settings_callback(client, query):
     if (
         st.status != enums.ChatMemberStatus.ADMINISTRATOR
         and st.status != enums.ChatMemberStatus.OWNER
-        and str(userid) not in ADMINS
+        and userid not in ADMINS
     ):
         return await query.answer("You don't have permission to change settings.", show_alert=True)
 
@@ -247,7 +247,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             return await query.answer('Piracy Is Crime')
 
         st = await client.get_chat_member(grp_id, userid)
-        if (st.status == enums.ChatMemberStatus.OWNER) or (str(userid) in ADMINS):
+        if (st.status == enums.ChatMemberStatus.OWNER) or (userid in ADMINS):
             await del_all(query.message, grp_id, title)
         else:
             await query.answer("You need to be Group Owner or an Auth User to do that!", show_alert=True)
@@ -261,7 +261,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
             grp_id = query.message.chat.id
             st = await client.get_chat_member(grp_id, userid)
-            if (st.status == enums.ChatMemberStatus.OWNER) or (str(userid) in ADMINS):
+            if (st.status == enums.ChatMemberStatus.OWNER) or (userid in ADMINS):
                 await query.message.delete()
                 try:
                     await query.message.reply_to_message.delete()

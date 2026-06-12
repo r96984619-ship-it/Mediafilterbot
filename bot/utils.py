@@ -398,6 +398,22 @@ def get_size(size):
     return "%.2f %s" % (size, units[i])
 
 
+def get_readable_time(seconds: int) -> str:
+    """Convert seconds to a human-readable string like '2h 05m 30s'."""
+    result = ""
+    (d, remainder) = divmod(seconds, 86400)
+    (h, remainder) = divmod(remainder, 3600)
+    (m, s) = divmod(remainder, 60)
+    if d:
+        result += f"{d}d "
+    if h:
+        result += f"{h}h "
+    if m:
+        result += f"{m}m "
+    result += f"{s}s"
+    return result.strip()
+
+
 def split_list(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]

@@ -917,7 +917,7 @@ async def settings(client, message):
     if (
         st.status != enums.ChatMemberStatus.ADMINISTRATOR
         and st.status != enums.ChatMemberStatus.OWNER
-        and str(userid) not in ADMINS
+        and userid not in ADMINS
     ):
         return
 
@@ -990,7 +990,7 @@ async def save_template(client, message):
     if (
         st.status != enums.ChatMemberStatus.ADMINISTRATOR
         and st.status != enums.ChatMemberStatus.OWNER
-        and str(userid) not in ADMINS
+        and userid not in ADMINS
     ):
         return
 
