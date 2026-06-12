@@ -101,6 +101,46 @@ Choose a topic below to learn more 👇"""
 <b>Settings:</b>
 • /settings — Open Group Settings Menu"""
 
+    HELP_SHORTLINK_TXT = """<b>💰 Shortlink Monetization</b>
+
+Earn money every time a user gets a file — they click your shortlink first, you get paid.
+
+<b>⚙️ Step-by-step setup:</b>
+
+1️⃣ Sign up on a shortlink site (e.g. <a href="https://mdisk.me">mdisk.me</a>, <a href="https://shareus.io">shareus.io</a>, <a href="https://gplinks.in">gplinks.in</a>)
+2️⃣ Get your <b>API Key</b> from their dashboard
+3️⃣ Send this command as admin:
+   <code>/shortlink yourdomain.com YOUR_API_KEY</code>
+4️⃣ Done! Users must now click your shortlink before getting any file.
+
+<b>📋 All Shortlink Commands:</b>
+
+<b>Set providers (up to 3):</b>
+• <code>/shortlink &lt;site&gt; &lt;api_key&gt;</code> — Set provider 1
+• <code>/shortlink2 &lt;site&gt; &lt;api_key&gt;</code> — Set provider 2
+• <code>/shortlink3 &lt;site&gt; &lt;api_key&gt;</code> — Set provider 3
+• <code>/shortlink_status</code> — See which providers are active
+
+<b>Control how often users verify:</b>
+• <code>/set_daily_verify &lt;number&gt;</code> — How many times/day a user must click
+  Example: <code>/set_daily_verify 1</code> → once per day (recommended)
+
+<b>Add a tutorial video:</b>
+• <code>/tutorial &lt;url&gt;</code> — Video showing users HOW to bypass the shortlink
+• <code>/tutorial2 &lt;url&gt;</code> / <code>/tutorial3 &lt;url&gt;</code> — For providers 2 &amp; 3
+
+<b>💎 Premium (bypass shortlink):</b>
+• <code>/premium &lt;user_id&gt;</code> — Grant premium (no verification needed)
+• <code>/unpremium &lt;user_id&gt;</code> — Remove premium
+• <code>/list_premium</code> — See all premium users
+• <code>/set_sub_link &lt;url&gt;</code> — Set a "Buy Premium" link shown to users
+
+<b>How it works for users:</b>
+• User searches a movie → bot shows a <b>VERIFY</b> button
+• User clicks VERIFY → goes through your shortlink → you earn
+• After verifying → user gets the file for the rest of the day
+• Premium users skip this and get files instantly"""
+
     HELP_USER_CHAT_TXT = """<b>👥 User &amp; Chat Management</b>
 
 <b>Users:</b>

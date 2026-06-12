@@ -601,6 +601,7 @@ def _help_admin_buttons():
             InlineKeyboardButton("🔍 GLOBAL FILTER", callback_data="help_filter"),
             InlineKeyboardButton("👥 USER & CHAT",   callback_data="help_user_chat"),
         ],
+        [InlineKeyboardButton("💰 SHORTLINK & MONETIZATION", callback_data="help_shortlink")],
         [InlineKeyboardButton("🔙 BACK", callback_data="start_home")],
     ])
 
@@ -610,6 +611,11 @@ def _help_filter_buttons():
     ])
 
 def _help_user_chat_buttons():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 BACK", callback_data="help_admin")],
+    ])
+
+def _help_shortlink_buttons():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔙 BACK", callback_data="help_admin")],
     ])
@@ -691,6 +697,20 @@ async def help_user_chat_callback(client, query):
             script.HELP_USER_CHAT_TXT,
             reply_markup=_help_user_chat_buttons(),
             parse_mode=enums.ParseMode.HTML
+        )
+    except Exception:
+        pass
+
+
+@Client.on_callback_query(filters.regex('^help_shortlink$'))
+async def help_shortlink_callback(client, query):
+    await query.answer()
+    try:
+        await query.message.edit_text(
+            script.HELP_SHORTLINK_TXT,
+            reply_markup=_help_shortlink_buttons(),
+            parse_mode=enums.ParseMode.HTML,
+            disable_web_page_preview=True
         )
     except Exception:
         pass
