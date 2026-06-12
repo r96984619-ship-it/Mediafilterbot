@@ -10,6 +10,14 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: stats
+    description: Bot statistics
+  - name: users
+    description: Bot users
+  - name: files
+    description: Indexed media files
+  - name: chats
+    description: Bot chats and groups
 paths:
   /healthz:
     get:
@@ -24,6 +32,107 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /stats/overview:
+    get:
+      operationId: getStatsOverview
+      tags: [stats]
+      summary: Get bot overview stats
+      description: Returns total counts for users, files, chats, and banned users
+      responses:
+        "200":
+          description: Overview stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsOverview"
+
+  /stats/files-by-type:
+    get:
+      operationId: getFilesByType
+      tags: [stats]
+      summary: Get file count grouped by MIME type
+      responses:
+        "200":
+          description: Files grouped by type
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileTypeCount"
+
+  /users:
+    get:
+      operationId: getUsers
+      tags: [users]
+      summary: List users
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: banned
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+
+  /files:
+    get:
+      operationId: getFiles
+      tags: [files]
+      summary: List indexed files
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated list of files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileList"
+
+  /chats:
+    get:
+      operationId: getChats
+      tags: [chats]
+      summary: List chats and groups
+      responses:
+        "200":
+          description: List of chats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Chat"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +143,114 @@ components:
       required:
         - status
 
+    StatsOverview:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalFiles:
+          type: integer
+        totalChats:
+          type: integer
+        bannedUsers:
+          type: integer
+      required:
+        - totalUsers
+        - totalFiles
+        - totalChats
+        - bannedUsers
+
+    FileTypeCount:
+      type: object
+      properties:
+        type:
+          type: string
+        count:
+          type: integer
+      required:
+        - type
+        - count
+
+    BotUser:
+      type: object
+      properties:
+        id:
+          type: ["string", "null"]
+        name:
+          type: ["string", "null"]
+        username:
+          type: ["string", "null"]
+        ban_status:
+          type: boolean
+      required:
+        - id
+        - ban_status
+
+    UserList:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/BotUser"
+        total:
+          type: integer
+        page:
+          type: integer
+        pages:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - pages
+
+    BotFile:
+      type: object
+      properties:
+        id:
+          type: string
+        file_name:
+          type: ["string", "null"]
+        file_size:
+          type: ["integer", "null"]
+        mime_type:
+          type: ["string", "null"]
+        caption:
+          type: ["string", "null"]
+      required:
+        - id
+
+    FileList:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/BotFile"
+        total:
+          type: integer
+        page:
+          type: integer
+        pages:
+          type: integer
+      required:
+        - files
+        - total
+        - page
+        - pages
+
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: ["string", "null"]
+        username:
+          type: ["string", "null"]
+        chat_status:
+          type: boolean
+      required:
+        - id
+        - chat_status
