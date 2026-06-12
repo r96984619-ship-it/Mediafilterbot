@@ -34,6 +34,8 @@ async def get_shortlink(url: str, api_url: str, api_key: str) -> str:
     import aiohttp
     try:
         api_base = api_url.rstrip('/')
+        if not api_base.startswith('http'):
+            api_base = 'https://' + api_base
         endpoint = f"{api_base}/api?api={api_key}&url={url}"
         async with aiohttp.ClientSession() as session:
             async with session.get(endpoint, timeout=aiohttp.ClientTimeout(total=10)) as resp:
