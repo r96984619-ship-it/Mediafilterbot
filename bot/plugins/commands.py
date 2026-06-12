@@ -426,7 +426,7 @@ async def start(client, message):
     'shortlink3', 'tutorial', 'tutorial2', 'tutorial3', 'set_log', 'set_caption',
     'fsu', 'del_fsub', 'show_fsub', 'ginfo', 'shortlink_status', 'shortlink_stats', 'set_template',
     'premium', 'unpremium', 'set_sub_link', 'set_movie_group', 'set_daily_verify',
-    'help', 'list_premium',
+    'help', 'list_premium', 'trending',
 ]))
 async def pm_text_redirect(client, message):
     import info as _info
