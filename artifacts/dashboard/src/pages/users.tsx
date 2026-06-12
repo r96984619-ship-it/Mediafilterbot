@@ -66,7 +66,7 @@ export default function Users() {
       {data && data.pages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Page {data.page} of {data.pages}
+            Page {data.page} of {data.pages} — {data.total.toLocaleString()} total
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>

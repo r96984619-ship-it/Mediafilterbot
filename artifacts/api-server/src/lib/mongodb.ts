@@ -13,6 +13,8 @@ if (!process.env["MONGODB_DB_NAME"]) {
 }
 
 let connectionPromise: Promise<Db | null> | null = null;
+let retryAfter = 0;
+const RETRY_COOLDOWN_MS = 30_000;
 
 async function connect(): Promise<Db | null> {
   if (!uri) return null;
@@ -20,10 +22,12 @@ async function connect(): Promise<Db | null> {
     const client = new MongoClient(uri, { serverSelectionTimeoutMS: 10_000 });
     await client.connect();
     const db = client.db(dbName);
+    retryAfter = 0;
     logger.info({ dbName }, "Connected to MongoDB");
     return db;
   } catch (err) {
     logger.error({ err }, "Failed to connect to MongoDB");
+    retryAfter = Date.now() + RETRY_COOLDOWN_MS;
     connectionPromise = null;
     return null;
   }
@@ -31,6 +35,11 @@ async function connect(): Promise<Db | null> {
 
 export function getDb(): Promise<Db | null> {
   if (!connectionPromise) {
+    if (retryAfter && Date.now() < retryAfter) {
+      const waitSec = Math.ceil((retryAfter - Date.now()) / 1000);
+      logger.warn({ waitSec }, "MongoDB connection cooling down after failure — skipping retry");
+      return Promise.resolve(null);
+    }
     connectionPromise = connect();
   }
   return connectionPromise;

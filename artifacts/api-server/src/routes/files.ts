@@ -19,7 +19,9 @@ router.get("/files", async (req, res) => {
   try {
     const filter: Record<string, unknown> = {};
     if (search && search.trim()) {
-      filter["file_name"] = { $regex: search.trim(), $options: "i" };
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = { $regex: escaped, $options: "i" };
+      filter["$or"] = [{ file_name: regex }, { caption: regex }];
     }
 
     const skip = (page - 1) * limit;

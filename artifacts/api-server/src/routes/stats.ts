@@ -13,7 +13,7 @@ router.get("/stats/overview", async (req, res) => {
     const [totalUsers, totalFiles, totalChats, bannedUsers] = await Promise.all([
       db.collection("users").countDocuments({}),
       db.collection(collectionName).countDocuments({}),
-      db.collection("groups").countDocuments({}),
+      db.collection("groups").countDocuments({ "chat_status.is_disabled": { $ne: true } }),
       db.collection("users").countDocuments({ "ban_status.is_banned": true }),
     ]);
     res.json({ totalUsers, totalFiles, totalChats, bannedUsers });
