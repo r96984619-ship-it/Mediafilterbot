@@ -253,6 +253,52 @@ async def start(client, message):
         )
         return
 
+    # ── Referral link ─────────────────────────────────────────────────────────
+    if data.startswith("ref_"):
+        code = data[4:]
+        from utils import process_refer
+        referrer_id, milestone_hit = process_refer(message.from_user.id, code)
+        if referrer_id and milestone_hit:
+            # Auto-grant premium and notify referrer
+            temp.PREMIUM_USERS.add(referrer_id)
+            import info as _ref_info
+            try:
+                await client.send_message(
+                    referrer_id,
+                    f"🎉 <b>Congratulations!</b>\n\n"
+                    f"You've hit <b>{_ref_info.REFER_PREMIUM_THRESHOLD} referrals</b>!\n"
+                    f"<b>Premium access has been granted automatically.</b>\n\n"
+                    f"You can now get files without any verification. 💎\n"
+                    f"Keep inviting to earn Premium again next milestone!",
+                    parse_mode="html"
+                )
+            except Exception:
+                pass
+        elif referrer_id:
+            from utils import get_refer_stats
+            stats = get_refer_stats(referrer_id)
+            try:
+                await client.send_message(
+                    referrer_id,
+                    f"✅ Someone joined via your referral link!\n"
+                    f"👥 You've now invited <b>{stats['count']}</b> / {stats['threshold']} people.\n"
+                    f"{'🔥 ' + str(stats['remaining']) + ' more to go for Premium!' if stats['remaining'] else ''}",
+                    parse_mode="html"
+                )
+            except Exception:
+                pass
+        # Show normal start screen after referral recorded
+        name = message.from_user.first_name
+        caption = _build_start_caption(message.from_user.id, name)
+        buttons = _build_start_buttons(message.from_user.id)
+        await message.reply_photo(
+            photo=random.choice(PICS),
+            caption=caption,
+            reply_markup=buttons,
+            parse_mode=enums.ParseMode.HTML
+        )
+        return
+
     try:
         pre, file_id = data.split('_', 1)
     except Exception:
@@ -426,7 +472,7 @@ async def start(client, message):
     'shortlink3', 'tutorial', 'tutorial2', 'tutorial3', 'set_log', 'set_caption',
     'fsu', 'del_fsub', 'show_fsub', 'ginfo', 'shortlink_status', 'shortlink_stats', 'set_template',
     'premium', 'unpremium', 'set_sub_link', 'set_movie_group', 'set_daily_verify',
-    'help', 'list_premium', 'trending',
+    'help', 'list_premium', 'trending', 'refer', 'refer_stats', 'set_refer_threshold',
 ]))
 async def pm_text_redirect(client, message):
     import info as _info

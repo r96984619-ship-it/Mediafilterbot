@@ -103,6 +103,9 @@ VERIFY_TUTORIAL = environ.get('VERIFY_TUTORIAL', '')
 VERIFY_TUTORIAL2 = environ.get('VERIFY_TUTORIAL2', '')
 VERIFY_TUTORIAL3 = environ.get('VERIFY_TUTORIAL3', '')
 
+# Referral system
+REFER_PREMIUM_THRESHOLD = int(environ.get('REFER_PREMIUM_THRESHOLD', 10))  # invites needed to earn premium
+
 LOG_STR = "Current Customized Configurations are:-\n"
 LOG_STR += ("IMDB Results are enabled, Bot will be showing imdb details for your queries.\n" if IMDB else "IMDB Results are disabled.\n")
 LOG_STR += ("P_TTI_SHOW_OFF found, Users will be redirected to send /start to Bot PM instead of sending file directly\n" if P_TTI_SHOW_OFF else "P_TTI_SHOW_OFF is disabled, files will be sent in PM instead of sending start.\n")

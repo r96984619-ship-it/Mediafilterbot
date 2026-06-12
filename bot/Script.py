@@ -225,7 +225,11 @@ Earn money every time a user gets a file — they click your shortlink first, yo
 • /info @username — Get user info
 • /imdb &lt;title&gt; — Search IMDb
 • /search &lt;title&gt; — Search movie title
-• /trending — Top 10 most searched movies this week"""
+• /trending — Top 10 most searched movies this week
+
+<b>🎁 Referral Program:</b>
+• /refer — Get your personal invite link
+  Invite friends → earn <b>FREE Premium</b> when you hit the goal!"""
 
     ABOUT_TXT = """<b>⚙️ About Me</b>
 

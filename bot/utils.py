@@ -91,6 +91,11 @@ class temp(object):
         'weekly': {},  # 'YYYY-Www'   -> count
         'total': 0,
     }
+    # ── Referral system ───────────────────────────────────────────────────────
+    REFERRAL_CODES   = {}  # code(str)          → user_id(int)
+    REFERRAL_COUNTS  = {}  # user_id(int)        → invite count(int)
+    REFERRAL_BY      = {}  # new_user_id(int)    → referrer_id(int)  (prevents double-count)
+    REFERRAL_REWARDED = set()  # user_ids already notified of each 10-multiple milestone
     BOT_START_TIME = time.time()  # set at import; overwritten in Bot.start()
 
 
@@ -168,6 +173,73 @@ def get_verify_stats() -> dict:
 
 def is_premium(user_id: int) -> bool:
     return user_id in temp.PREMIUM_USERS
+
+
+# ── Referral helpers ──────────────────────────────────────────────────────────
+
+def get_refer_code(user_id: int) -> str:
+    """Get or create a unique 8-char referral code for a user."""
+    import hashlib
+    # Check if code already exists for this user
+    for code, uid in temp.REFERRAL_CODES.items():
+        if uid == user_id:
+            return code
+    # Create new code
+    raw = f"ref-{user_id}-{time.time()}"
+    code = hashlib.md5(raw.encode()).hexdigest()[:8].upper()
+    # Avoid collisions
+    while code in temp.REFERRAL_CODES:
+        raw += "x"
+        code = hashlib.md5(raw.encode()).hexdigest()[:8].upper()
+    temp.REFERRAL_CODES[code] = user_id
+    return code
+
+
+def process_refer(new_user_id: int, code: str):
+    """
+    Record a referral when a new user starts via ref_CODE.
+    Returns (referrer_id, milestone_hit) or (None, False).
+    - Ignores self-referral.
+    - Ignores if new_user already came via any referral link (prevents gaming).
+    """
+    import info as _info
+    referrer_id = temp.REFERRAL_CODES.get(code)
+    if not referrer_id:
+        return None, False
+    if referrer_id == new_user_id:
+        return None, False                       # can't refer yourself
+    if new_user_id in temp.REFERRAL_BY:
+        return referrer_id, False                # already counted from another link
+    # Record it
+    temp.REFERRAL_BY[new_user_id] = referrer_id
+    temp.REFERRAL_COUNTS[referrer_id] = temp.REFERRAL_COUNTS.get(referrer_id, 0) + 1
+    count = temp.REFERRAL_COUNTS[referrer_id]
+    threshold = _info.REFER_PREMIUM_THRESHOLD
+    # Check if they just hit a new milestone (every N invites)
+    milestone_hit = (count % threshold == 0)
+    return referrer_id, milestone_hit
+
+
+def get_refer_stats(user_id: int) -> dict:
+    """Return referral stats for a user."""
+    import info as _info
+    code = get_refer_code(user_id)
+    count = temp.REFERRAL_COUNTS.get(user_id, 0)
+    threshold = _info.REFER_PREMIUM_THRESHOLD
+    remaining = threshold - (count % threshold) if count % threshold != 0 else 0
+    return {
+        'code': code,
+        'count': count,
+        'threshold': threshold,
+        'remaining': remaining,
+        'milestones': count // threshold,
+    }
+
+
+def get_refer_leaderboard(limit: int = 10) -> list:
+    """Return top referrers sorted by invite count."""
+    ranked = sorted(temp.REFERRAL_COUNTS.items(), key=lambda x: x[1], reverse=True)
+    return ranked[:limit]
 
 
 def track_search(query: str):
