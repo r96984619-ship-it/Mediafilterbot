@@ -57,28 +57,53 @@ Choose a topic below to learn more 👇"""
 
     # ── Help pages (admin) ────────────────────────────────────────────────────
 
-    HELP_ADMIN_TXT = """<b>📝 NOTE:</b>
-<i>These Modules Only Work For My Admins</i>
+    HELP_ADMIN_TXT = """<b>🛠 Admin Control Panel</b>
 
-<b>📋 Basic Command</b>
-• /logs — Get The Recent Error Logs
-• /stats — Live Database &amp; Server Stats
+<b>📊 Stats &amp; Logs</b>
+• /stats — Live database &amp; server stats
+• /logs — Recent error logs
 
-<b>📁 Database &amp; Server Command</b>
-• /stats — Get Database Status
-• /delete — Delete A Specific File From DB
-• /deleteall — Delete All Files From DB
-• /users — List Of All Users &amp; IDs
-• /chats — List Of All Chats &amp; IDs
-• /channel — List Of All Connected Channels
-• /leave — Make Bot Leave A Chat
-• /disable — Disable A Chat
+<b>🗄 Database</b>
+• /delete — Delete a specific file from DB
+• /deleteall — Delete all files from DB
+• /users — List all users &amp; IDs
+• /chats — List all groups &amp; IDs
+• /channel — List connected channels
 
-<b>🔗 Indexing</b>
-• /setskip — Set Skip Count For Indexing
-• /set_log — Set Log Channel
-• /set_caption — Set Custom File Caption
-• /set_template — Set Custom IMDB Template"""
+<b>📡 Indexing Files</b>
+• Forward any channel's last message → bot indexes all files
+• /setskip &lt;n&gt; — Skip first N messages when indexing
+• /set_log — Set log channel
+• /set_caption — Set custom file caption
+• /set_template — Set custom IMDB template
+
+<b>📢 Broadcast</b>
+• /broadcast — Send message to all users
+• /grp_broadcast — Send message to all groups
+
+<b>🔒 Force Subscribe</b>
+• /fsu &lt;channel&gt; — Set must-join channel 1
+• /fsu2 &lt;channel&gt; — Set must-join channel 2
+• /fsu3 &lt;channel&gt; — Set must-join channel 3
+• /del_fsub · /del_fsub2 · /del_fsub3 — Remove
+• /show_fsub — Show all active FSub channels
+
+<b>💎 Premium Users</b>
+• /premium &lt;user_id&gt; — Give premium (skips verify)
+• /unpremium &lt;user_id&gt; — Remove premium
+• /list_premium — See all premium users
+
+<b>🚫 User Control</b>
+• /ban &lt;user_id&gt; — Ban a user
+• /unban &lt;user_id&gt; — Unban a user
+• /leave &lt;chat_id&gt; — Make bot leave a group
+• /disable &lt;chat_id&gt; — Disable bot in a group
+
+<b>🔗 Group Links</b>
+• /set_movie_group &lt;url&gt; — Set movie group link
+• /set_sub_link &lt;url&gt; — Set "Buy Premium" link
+
+<i>👇 Use buttons below for Filter &amp; Shortlink details</i>"""
 
     HELP_FILTER_TXT = """<b>🔍 Global Filter &amp; Auto-Filter</b>
 
