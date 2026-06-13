@@ -20,8 +20,10 @@ import type {
   FileList,
   FileTypeCount,
   GetFilesParams,
+  GetTopSearchesParams,
   GetUsersParams,
   HealthStatus,
+  SearchEntry,
   StatsOverview,
   UserList
 } from './api.schemas';
@@ -504,6 +506,90 @@ export function useGetChats<TData = Awaited<ReturnType<typeof getChats>>, TError
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetChatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetTopSearchesUrl = (params?: GetTopSearchesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stats/searches?${stringifiedParams}` : `/api/stats/searches`
+}
+
+/**
+ * @summary Get top searched movies/series
+ */
+export const getTopSearches = async (params?: GetTopSearchesParams, options?: RequestInit): Promise<SearchEntry[]> => {
+
+  return customFetch<SearchEntry[]>(getGetTopSearchesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTopSearchesQueryKey = (params?: GetTopSearchesParams,) => {
+    return [
+    `/api/stats/searches`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetTopSearchesQueryOptions = <TData = Awaited<ReturnType<typeof getTopSearches>>, TError = ErrorType<unknown>>(params?: GetTopSearchesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTopSearches>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTopSearchesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTopSearches>>> = ({ signal }) => getTopSearches(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTopSearches>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTopSearchesQueryResult = NonNullable<Awaited<ReturnType<typeof getTopSearches>>>
+export type GetTopSearchesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get top searched movies/series
+ */
+
+export function useGetTopSearches<TData = Awaited<ReturnType<typeof getTopSearches>>, TError = ErrorType<unknown>>(
+ params?: GetTopSearchesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTopSearches>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTopSearchesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

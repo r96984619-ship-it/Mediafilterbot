@@ -8,6 +8,7 @@ import Overview from "@/pages/overview";
 import Users from "@/pages/users";
 import Files from "@/pages/files";
 import Chats from "@/pages/chats";
+import Searches from "@/pages/searches";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,7 @@ function Router() {
         <Route path="/users" component={Users} />
         <Route path="/files" component={Files} />
         <Route path="/chats" component={Chats} />
+        <Route path="/searches" component={Searches} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

@@ -66,6 +66,13 @@ export interface Chat {
   chat_status: boolean;
 }
 
+export interface SearchEntry {
+  query: string;
+  count: number;
+  /** @nullable */
+  last_searched?: string | null;
+}
+
 export type GetUsersParams = {
 page?: number;
 limit?: number;
@@ -76,5 +83,9 @@ export type GetFilesParams = {
 page?: number;
 limit?: number;
 search?: string;
+};
+
+export type GetTopSearchesParams = {
+limit?: number;
 };
 

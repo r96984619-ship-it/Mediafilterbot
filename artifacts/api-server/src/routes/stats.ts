@@ -84,4 +84,32 @@ router.get("/stats/files-by-type", async (req, res) => {
   }
 });
 
+router.get("/stats/searches", async (req, res) => {
+  const db = await getDb();
+  if (!db) {
+    res.json([]);
+    return;
+  }
+  try {
+    const rawLimit = parseInt(String(req.query.limit ?? "20"), 10);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 20;
+    const results = await db
+      .collection("search_stats")
+      .find({})
+      .sort({ count: -1 })
+      .limit(limit)
+      .toArray();
+    res.json(
+      results.map((r) => ({
+        query: r._id as unknown as string,
+        count: r.count as number,
+        last_searched: r.last_searched ? new Date(r.last_searched).toISOString() : null,
+      }))
+    );
+  } catch (err) {
+    req.log.error({ err }, "Failed to get search stats");
+    res.status(500).json({ error: "Failed to get search stats" });
+  }
+});
+
 export default router;

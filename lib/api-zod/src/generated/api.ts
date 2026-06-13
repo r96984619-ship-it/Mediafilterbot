@@ -102,3 +102,20 @@ export const GetChatsResponseItem = zod.object({
 export const GetChatsResponse = zod.array(GetChatsResponseItem)
 
 
+/**
+ * @summary Get top searched movies/series
+ */
+export const getTopSearchesQueryLimitDefault = 20;
+
+export const GetTopSearchesQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getTopSearchesQueryLimitDefault)
+})
+
+export const GetTopSearchesResponseItem = zod.object({
+  "query": zod.string(),
+  "count": zod.number(),
+  "last_searched": zod.string().nullish()
+})
+export const GetTopSearchesResponse = zod.array(GetTopSearchesResponseItem)
+
+

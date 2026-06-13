@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, FileVideo, MessageSquare, TerminalSquare } from "lucide-react";
+import { LayoutDashboard, Users, FileVideo, MessageSquare, TerminalSquare, TrendingUp } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider } from "@/components/ui/sidebar";
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -11,6 +11,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { name: "Users", path: "/users", icon: Users },
     { name: "Files", path: "/files", icon: FileVideo },
     { name: "Chats", path: "/chats", icon: MessageSquare },
+    { name: "Searches", path: "/searches", icon: TrendingUp },
   ];
 
   return (
