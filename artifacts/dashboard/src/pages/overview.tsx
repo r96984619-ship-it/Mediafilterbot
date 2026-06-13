@@ -40,7 +40,7 @@ export default function Overview() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       setSecondsLeft(s => {
-        if (s <= 1) return REFRESH_INTERVAL / 1000;
+        if (s <= 0) return REFRESH_INTERVAL / 1000;
         return s - 1;
       });
     }, 1000);
